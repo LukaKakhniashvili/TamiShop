@@ -3,12 +3,15 @@ import CategoriesSidebar from '../components/CategoriesSidebar';
 import ProductListing, { DEFAULT_SORT, normalizeSort } from '../components/ProductListing';
 import { DEAL_MIN_DISCOUNT } from '../constants';
 import Icon from '../components/Icon';
+import { useTranslation } from 'react-i18next';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 // URL პარამეტრები, რომლებსაც კატალოგი იყენებს (მთავარი გვერდი ძველ ბმულებს აქ გადამისამართებს)
 export const CATALOG_PARAMS = ['search', 'page', 'sort', 'deals', 'discounted', 'new'];
 
 // სრული კატალოგი: კატეგორიები, ძიება, ფილტრები, სორტირება და გვერდები — ყველაფერი URL-შია
 const Catalog = () => {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const search = params.get('search') || '';
   const page = Math.max(1, Number(params.get('page')) || 1);
@@ -27,20 +30,21 @@ const Catalog = () => {
   };
 
   const title = search
-    ? 'ძიების შედეგები'
+    ? t('catalog.searchResults')
     : deals
-      ? 'ცხელი შეთავაზებები'
+      ? t('sections.deals.title')
       : newOnly
-        ? 'ახალი პროდუქტები'
-        : 'ყველა პროდუქტი';
+        ? t('sections.newArrivals.title')
+        : t('catalog.allProducts');
   const hasFilters = search || deals || discounted || newOnly;
+  useDocumentMeta(title);
 
   return (
     <div className="container page">
-      <nav className="breadcrumb" aria-label="breadcrumb">
-        <Link to="/">მთავარი</Link>
+      <nav className="breadcrumb" aria-label={t('common.breadcrumb')}>
+        <Link to="/">{t('nav.home')}</Link>
         <Icon name="chevronRight" size={14} />
-        <span className="current">კატალოგი</span>
+        <span className="current">{t('nav.catalog')}</span>
       </nav>
 
       <div className="catalog">
@@ -67,22 +71,22 @@ const Catalog = () => {
               )}
               {deals > 0 && (
                 <button type="button" className="chip chip-accent" onClick={() => updateParams({ deals: null })}>
-                  {DEAL_MIN_DISCOUNT}%+ ფასდაკლება <Icon name="x" size={14} />
+                  {t('hub.quick.deals', { percent: DEAL_MIN_DISCOUNT })} <Icon name="x" size={14} />
                 </button>
               )}
               {newOnly && (
                 <button type="button" className="chip chip-accent" onClick={() => updateParams({ new: null })}>
-                  ბოლო 14 დღე <Icon name="x" size={14} />
+                  {t('catalog.last14Days')} <Icon name="x" size={14} />
                 </button>
               )}
             </>
           )}
-          emptyTitle={search ? 'ვერაფერი მოიძებნა' : 'პროდუქტები ვერ მოიძებნა'}
+          emptyTitle={search ? t('catalog.nothingFound') : t('catalog.noProducts')}
           emptyText={
             search
-              ? `„${search}"-ზე შედეგი არ არის. სცადეთ სხვა საძიებო სიტყვა.`
+              ? t('catalog.noResultsFor', { search })
               : hasFilters
-                ? 'არჩეულ ფილტრებს არცერთი პროდუქტი არ შეესაბამება.'
+                ? t('catalog.noFilterMatches')
                 : undefined
           }
           emptyAction={
@@ -92,7 +96,7 @@ const Catalog = () => {
                 className="btn"
                 onClick={() => updateParams({ search: null, deals: null, discounted: null, new: null })}
               >
-                ყველა პროდუქტის ნახვა
+                {t('catalog.viewAllProducts')}
               </button>
             )
           }

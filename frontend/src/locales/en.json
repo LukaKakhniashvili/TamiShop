@@ -1,0 +1,559 @@
+{
+  "meta": {
+    "homeTitle": "Online store",
+    "homeDescription": "Tam`i Shop — electronics, clothing, home goods and more. Free delivery across Georgia, pay on delivery."
+  },
+  "common": {
+    "loading": "Loading...",
+    "decrease": "Decrease",
+    "increase": "Increase",
+    "quantity": "Quantity",
+    "pages": "Pages",
+    "previous": "Previous",
+    "next": "Next",
+    "hidePassword": "Hide password",
+    "showPassword": "Show password",
+    "clear": "Clear",
+    "close": "Close",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "change": "Change",
+    "back": "Back",
+    "continue": "Continue",
+    "retry": "Try again",
+    "saving": "Saving...",
+    "sending": "Sending...",
+    "free": "Free",
+    "tryAgain": "Please try again",
+    "backToShop": "Back to the shop",
+    "productCount_one": "{{count}} product",
+    "productCount_other": "{{count}} products",
+    "breadcrumb": "Breadcrumb"
+  },
+  "nav": {
+    "searchPlaceholder": "Search products...",
+    "search": "Search",
+    "accountMenu": "Account menu",
+    "myProfile": "My profile",
+    "myOrders": "My orders",
+    "adminPanel": "Admin panel",
+    "logout": "Log out",
+    "loggedOut": "You have been logged out.",
+    "homePage": "Home page",
+    "catalog": "Catalog",
+    "darkTheme": "Dark theme",
+    "lightTheme": "Light theme",
+    "cartWithCount_one": "Cart ({{count}} item)",
+    "cartWithCount_other": "Cart ({{count}} items)",
+    "login": "Log in",
+    "mobileNav": "Mobile navigation",
+    "home": "Home",
+    "cart": "Cart",
+    "panel": "Panel",
+    "profile": "Profile",
+    "language": "Language"
+  },
+  "footer": {
+    "tagline": "Electronics and accessories at the best prices.",
+    "shop": "Shop",
+    "allProducts": "All products",
+    "discounts": "Discounts",
+    "newProducts": "New arrivals",
+    "account": "Account",
+    "rights": "© {{year}} {{brand}}. All rights reserved."
+  },
+  "hero": {
+    "slides": {
+      "sale": {
+        "eyebrow": "Hot deal",
+        "title": "MEGA",
+        "titleAccent": "SALE",
+        "subtitle": "Electronics and accessories at the best prices"
+      },
+      "delivery": {
+        "eyebrow": "Free delivery",
+        "title": "Fast",
+        "titleAccent": "courier",
+        "subtitle": "On every order across Georgia — within 2–6 business days"
+      },
+      "cashback": {
+        "eyebrow": "VIP cashback",
+        "title": "Get back",
+        "titleAccent": "10%",
+        "subtitle": "For every signed-in customer on every purchase"
+      }
+    },
+    "cta": "Shop now",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s",
+    "endsIn": "Offer ends in",
+    "slide": "Slide {{n}}"
+  },
+  "home": {
+    "perks": {
+      "freeDelivery": {
+        "title": "Free delivery",
+        "text": "Across Georgia, on any order"
+      },
+      "deliveryTime": {
+        "title": "Delivery in 2–6 business days",
+        "text": "To every region of Georgia"
+      },
+      "payOnDelivery": {
+        "title": "Pay on delivery",
+        "text": "Pay the courier when you receive it"
+      }
+    },
+    "discover": "Discover",
+    "ctaTitle": "Can't find what you're looking for?",
+    "ctaText": "Browse the full catalog — with search, filters and sorting.",
+    "ctaButton": "Full catalog"
+  },
+  "sections": {
+    "viewAll": "View all",
+    "deals": {
+      "eyebrow": "{{percent}}%+ off",
+      "title": "Hot deals",
+      "subtitle": "The best prices — every product at least {{percent}}% off",
+      "emptyTitle": "No {{percent}}%+ discounts right now",
+      "emptyText": "New deals are coming soon — stay tuned!"
+    },
+    "bestSellers": {
+      "title": "Best sellers",
+      "subtitle": "Our most popular, best-selling products"
+    },
+    "newArrivals": {
+      "title": "New arrivals",
+      "subtitle": "Products added in the last 14 days",
+      "emptyTitle": "No new products in the last 14 days",
+      "emptyText": "New products will appear here automatically"
+    },
+    "recommended": {
+      "title": "Recommended products",
+      "titlePersonal": "Recommended for you",
+      "subtitle": "Popular and highly rated products",
+      "subtitlePersonal": "Picked based on your views, cart and purchases"
+    }
+  },
+  "hub": {
+    "title": "Shop by category",
+    "subtitle": "Choose a category or browse the full catalog",
+    "allProducts": "All products",
+    "quickFilters": "Quick filters",
+    "quick": {
+      "discounted": "On sale",
+      "deals": "{{percent}}%+ off",
+      "new": "New arrivals",
+      "cheap": "Price: low to high"
+    }
+  },
+  "catalog": {
+    "categories": "Categories",
+    "all": "All",
+    "sortLabel": "Sort by",
+    "sort": {
+      "newest": "Newest",
+      "name_asc": "Name: A–Z",
+      "name_desc": "Name: Z–A",
+      "price_asc": "Price: low to high",
+      "price_desc": "Price: high to low",
+      "discount_desc": "Discount: highest %"
+    },
+    "discountedOnly": "On sale only",
+    "loadErrorTitle": "Couldn't load",
+    "loadErrorText": "We couldn't load the products. Please refresh the page.",
+    "searchResults": "Search results",
+    "allProducts": "All products",
+    "last14Days": "Last 14 days",
+    "nothingFound": "Nothing found",
+    "noProducts": "No products found",
+    "noResultsFor": "No results for “{{search}}”. Try a different search term.",
+    "noFilterMatches": "No products match the selected filters.",
+    "viewAllProducts": "View all products",
+    "emptyCategoryTitle": "This category is empty",
+    "emptyCategoryText": "There are no products in this category yet."
+  },
+  "product": {
+    "new": "New",
+    "soldOut": "Sold out",
+    "prevImage": "Previous image",
+    "nextImage": "Next image",
+    "image": "Image {{n}}",
+    "save": "Save {{amount}}",
+    "from": "from",
+    "chooseOptionsFor": "{{name}} — choose options",
+    "chooseOptions": "Choose options",
+    "chooseOptionsHint": "Choose options to see the exact price and availability.",
+    "noSuchCombination": "This combination isn't available. Please choose different options.",
+    "addToCart": "Add to cart",
+    "notFoundTitle": "Product not found",
+    "notFoundText": "The product may have been removed, or the link is incorrect.",
+    "inStock": "In stock",
+    "inStockLeft_one": "In stock — {{count}} left",
+    "inStockLeft_other": "In stock — {{count}} left",
+    "variantSoldOut": "This option is sold out",
+    "outOfStock": "Out of stock",
+    "assureDelivery": "Free delivery across Georgia",
+    "assurePayment": "Pay the courier on delivery",
+    "specifications": "Specifications",
+    "about": "About this product"
+  },
+  "variants": {
+    "soldOut": "Sold out",
+    "conflict": "Not available with the selected options — choosing it will change your other selections",
+    "unavailable": "Unavailable",
+    "choose": "Choose",
+    "optional": "Optional",
+    "pleaseSelect": "Please select {{name}}."
+  },
+  "cart": {
+    "title": "Cart",
+    "added": "Added to cart",
+    "emptyTitle": "Your cart is empty",
+    "emptyText": "Looks like you haven't added anything yet. Browse our products and find something you like.",
+    "itemsInCart_one": "{{count}} item in your cart",
+    "itemsInCart_other": "{{count}} items in your cart",
+    "continueShopping": "Continue shopping",
+    "perUnit": "{{price}} / each",
+    "remove": "Remove",
+    "summary": "Order summary",
+    "freeShipping": "Free delivery across Georgia · 2–6 business days",
+    "items_one": "Items ({{count}})",
+    "items_other": "Items ({{count}})",
+    "delivery": "Delivery",
+    "total": "Total",
+    "checkout": "Checkout",
+    "loginRequired": "Please log in to continue"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "breadcrumb": "Checkout",
+    "steps": {
+      "label": "Checkout steps",
+      "delivery": "Delivery",
+      "payment": "Payment",
+      "done": "Confirmation"
+    },
+    "errors": {
+      "firstName": "Enter your first name",
+      "lastName": "Enter your last name",
+      "phone": "Enter a valid phone number",
+      "city": "Choose a city",
+      "street": "Enter your full address (street, building, apartment)",
+      "paymentMethod": "Choose a payment method",
+      "bank": "Choose a bank",
+      "items": "Your cart data is invalid. Please refresh the page and try again.",
+      "deliveryMethod": "Choose a delivery method",
+      "orderFailed": "We couldn't place your order"
+    },
+    "deliveryMethods": {
+      "standard": "Standard delivery"
+    },
+    "deliveryEstimate": "{{min}}–{{max}} business days",
+    "deliveryCoverage": "All regions of Georgia",
+    "freeDeliveryEverywhere": "Free delivery across Georgia",
+    "deliveryType": "Delivery type",
+    "standard": "Standard",
+    "cost": "Cost",
+    "estimatedTime": "Estimated time",
+    "coverage": "Coverage",
+    "paymentMethods": {
+      "card": {
+        "label": "Pay by card",
+        "description": "On the bank's secure page — Visa, Mastercard"
+      },
+      "cod": {
+        "label": "Pay the courier",
+        "description": "Pay when you receive your order"
+      }
+    },
+    "banks": {
+      "BOG": "Bank of Georgia",
+      "TBC": "TBC Bank"
+    },
+    "recipient": "Recipient",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "phone": "Phone number",
+    "address": "Delivery address",
+    "city": "City",
+    "chooseCity": "Choose a city",
+    "searchCity": "Search for a city...",
+    "cityNotFound": "City not found",
+    "postalCode": "Postal code",
+    "optional": "Optional",
+    "street": "Address",
+    "streetHint": "Street, building number, apartment, entrance, floor",
+    "streetPlaceholder": "e.g. 25 Rustaveli Ave, apt. 12",
+    "delivery": "Delivery",
+    "continueToPayment": "Continue to payment",
+    "paymentMethod": "Payment method",
+    "payment": "Payment",
+    "cardComingSoonHint": "Card payments will be available soon",
+    "availableSoon": "Available soon",
+    "soon": "Soon",
+    "chooseBank": "Choose a bank",
+    "bankHint": "You'll enter your card details on the bank's secure page",
+    "bank": "Bank",
+    "temporarilyUnavailable": "temporarily unavailable",
+    "test": "Test",
+    "codNote": "Pay the courier when you receive your order. No card details needed.",
+    "chooseBankFirst": "Choose a bank first",
+    "preparingPayment": "Preparing payment...",
+    "payAmount": "Pay · {{amount}}",
+    "confirmOrder": "Confirm order",
+    "removeItem": "Remove {{name}} from the order",
+    "remove": "Remove",
+    "discount": "Discount",
+    "totalToPay": "Total to pay",
+    "cardSecurityNote": "Your card details are processed by the bank only",
+    "cancelOrder": "Cancel order",
+    "cancelDialog": {
+      "title": "Cancel the order?",
+      "message": "Are you sure you want to cancel this order? All products will be removed from it.",
+      "confirm": "Yes, cancel",
+      "keep": "Keep the order"
+    },
+    "toasts": {
+      "alreadyPaid": "The order has already been paid",
+      "cannotCancel": "It can no longer be cancelled",
+      "cancelFailed": "Couldn't cancel the order",
+      "cancelled": "Order cancelled",
+      "cartCleared": "Your cart has been cleared"
+    },
+    "emptyTitle": "There are no products in this order",
+    "emptyText": "Add products to your cart to place an order.",
+    "loadError": "We couldn't load the checkout page. Please refresh the page."
+  },
+  "confirmation": {
+    "title": "Order received!",
+    "thanks": "Thank you, {{name}}!",
+    "codText": "Your order has been placed — you'll pay the courier on delivery.",
+    "paidText": "Your payment was successful and your order has been placed.",
+    "orderNumber": "Order number",
+    "recipient": "Recipient",
+    "method": "Method",
+    "card": "Card",
+    "transaction": "Transaction",
+    "status": "Status",
+    "payOnDelivery": "Due on delivery",
+    "paid": "Paid"
+  },
+  "payment": {
+    "secureOrder": "Secure payment · Order {{number}}",
+    "frameTitle": "{{bank}} — payment page",
+    "loadingBank": "Loading the bank's page...",
+    "connecting": "Connecting to the bank...",
+    "preparing": "Preparing the secure payment page",
+    "verifying": "Checking payment status...",
+    "stillProcessing": "The bank is still processing your payment",
+    "stillProcessingText": "This may take a few seconds. Please don't pay again.",
+    "checkAgain": "Check again",
+    "dontClose": "Please don't close this window",
+    "failedTitle": "Payment failed",
+    "loadFailedTitle": "Couldn't load the payment page",
+    "loadFailedText": "We couldn't load the payment page. Check your internet connection and try again.",
+    "cancelled": "The payment was cancelled.",
+    "declined": "The bank declined the payment.",
+    "notCharged": "You were not charged. Your order is saved — you can try again.",
+    "otherMethod": "Choose another method",
+    "testMode": "Test mode",
+    "openNewWindow": "Page not showing? Open it in a new window"
+  },
+  "paymentReturn": {
+    "processed": "The bank has processed your payment",
+    "finished": "The payment process is complete",
+    "text": "Return to the shop window — your order status will update there automatically."
+  },
+  "orderStatus": {
+    "pending": "Pending",
+    "processing": "Processing",
+    "shipped": "Shipped",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "paymentStatus": {
+    "pending": "Pending",
+    "paid": "Paid",
+    "pay_on_delivery": "Pay on delivery",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "refunded": "Refunded"
+  },
+  "paymentMethodShort": {
+    "card": "Card",
+    "cod": "Courier"
+  },
+  "profile": {
+    "personalInfo": "Personal information",
+    "personalData": "Personal details",
+    "saveChanges": "Save changes",
+    "saved": "Profile saved",
+    "saveFailed": "Couldn't save",
+    "noOrdersTitle": "You have no orders yet",
+    "noOrdersText": "When you place your first order, it will appear here.",
+    "startShopping": "Start shopping",
+    "order": "Order {{number}}",
+    "refundPending": "Refund pending"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "or": "or",
+    "enterEmailFirst": "Please enter your email first",
+    "login": {
+      "metaTitle": "Log in",
+      "title": "Welcome back",
+      "subtitle": "Log in to your account",
+      "submit": "Log in",
+      "submitting": "Logging in...",
+      "welcome": "Welcome!",
+      "welcomeName": "Welcome, {{name}}!",
+      "failed": "Login failed. Incorrect email or password.",
+      "googleFailed": "Google sign-in failed. Please try again.",
+      "noAccount": "Don't have an account yet?",
+      "cantSignIn": "Can't log in?",
+      "recover": "Recover your account"
+    },
+    "register": {
+      "metaTitle": "Sign up",
+      "link": "Sign up",
+      "title": "Create an account",
+      "subtitle": "Sign up and get exclusive offers",
+      "stepEmail": "Email",
+      "stepDetails": "Details",
+      "verified": "Verified",
+      "emailVerified": "Your email has been verified!",
+      "verificationRequired": "You need to verify your email to sign up",
+      "street": "Address (street, number)",
+      "submit": "Sign up",
+      "submitting": "Signing up...",
+      "verifyFirstHint": "Verify your email first to sign up",
+      "haveAccount": "Already have an account?",
+      "created": "Account created!",
+      "welcome": "Welcome aboard",
+      "failed": "Sign-up failed. Please try again."
+    }
+  },
+  "otp": {
+    "label": "Verification code",
+    "hint": "Check your email (including the Spam folder)",
+    "send": "Send code",
+    "verify": "Verify",
+    "resend": "Request a new code",
+    "sentInfo_one": "A verification code has been sent to your email. The code is valid for {{count}} minute",
+    "sentInfo_other": "A verification code has been sent to your email. The code is valid for {{count}} minutes",
+    "remaining": "remaining",
+    "expired": "The verification code has expired. Please request a new one.",
+    "resendIn": "You can request a new code in <timer>{{time}}</timer>",
+    "availableIn": "Available in {{time}}",
+    "notReceived": "Didn't get the code?",
+    "sentTitle": "Verification code sent",
+    "resentTitle": "New code sent",
+    "resentText": "A new verification code has been sent to your email",
+    "enterCode": "Please enter the 4-digit code",
+    "sendFailed": "We couldn't send the code. Please try again.",
+    "verifyFailed": "We couldn't verify the code"
+  },
+  "password": {
+    "rules": {
+      "length": "At least {{min}} characters",
+      "upper": "An uppercase Latin letter",
+      "lower": "A lowercase Latin letter",
+      "digit": "A number",
+      "special": "A special character (!@#$...)"
+    },
+    "ruleMet": "met",
+    "ruleNotMet": "not met",
+    "policy": "Your password must contain at least {{min}} characters, an uppercase and a lowercase Latin letter, a number and a special character",
+    "required": "Password is required",
+    "tooLong": "Password must not exceed {{max}} characters",
+    "mismatch": "Passwords don't match.",
+    "repeatRequired": "Repeat the new password",
+    "current": "Current password",
+    "new": "New password",
+    "repeat": "Repeat new password",
+    "change": "Change password",
+    "changed": "Your password has been changed.",
+    "changeFailed": "We couldn't change your password. Please try again."
+  },
+  "recovery": {
+    "title": "Account recovery",
+    "stepsLabel": "Recovery steps",
+    "steps": {
+      "email": "Email",
+      "code": "Code",
+      "password": "New password"
+    },
+    "subtitle": {
+      "email": "Enter your account email — we'll send you a recovery code",
+      "code": "Enter the 4-digit code you received by email",
+      "password": "Create a new password",
+      "done": "Your password has been updated"
+    },
+    "emailPlaceholder": "Enter your email",
+    "codeSent": "Recovery code sent",
+    "codeVerified": "Code verified",
+    "enterNewPassword": "Enter a new password",
+    "successText": "Your password has been changed. You can now log in with your new password.",
+    "redirectIn_one": "Redirecting to the login page in {{count}} second...",
+    "redirectIn_other": "Redirecting to the login page in {{count}} seconds...",
+    "remembered": "Remembered your password?"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "text": "The page you're looking for doesn't exist or has been moved.",
+    "back": "Back to the home page"
+  },
+  "errors": {
+    "generic": "Something went wrong. Please try again.",
+    "network": "Couldn't connect to the server. Check your internet connection and try again.",
+    "codes": {
+      "RATE_LIMITED": "Too many attempts. Please try again in a little while.",
+      "RESEND_COOLDOWN": "You can request a new code in {{resendAvailableInSeconds}} seconds",
+      "EMAIL_FAILED": "We couldn't send the verification code. Please try again shortly.",
+      "CODE_NOT_FOUND": "Verification code not found. Please request a new one.",
+      "CODE_EXPIRED": "The verification code has expired. Please request a new one.",
+      "TOO_MANY_ATTEMPTS": "Too many attempts. Please request a new code.",
+      "CODE_INVALID": "Incorrect code. Attempts left: {{attemptsLeft}}",
+      "CODE_INVALID_LAST": "Incorrect code. No attempts left — please request a new code.",
+      "VERIFICATION_REQUIRED": "Your email verification has expired. Please verify your email again.",
+      "WEAK_PASSWORD": "Your password must contain at least 8 characters, an uppercase and a lowercase Latin letter, a number and a special character",
+      "NO_PASSWORD": "Your account has no password (you sign in with Google). Use account recovery to set one.",
+      "CURRENT_PASSWORD_REQUIRED": "Enter your current password",
+      "CURRENT_PASSWORD_INCORRECT": "The current password is incorrect.",
+      "PASSWORD_MISMATCH": "Passwords don't match.",
+      "SAME_PASSWORD": "The new password must be different from the current one.",
+      "INVALID_EMAIL": "Enter a valid email address",
+      "EMAIL_NOT_FOUND": "Email not found. Please sign up.",
+      "EMAIL_EXISTS": "An account with this email already exists",
+      "ACCOUNT_DISABLED": "This account has been deactivated.",
+      "ACCOUNT_UNAVAILABLE": "The account wasn't found or has been deactivated.",
+      "RESET_TOKEN_INVALID": "The recovery session has expired or was already used. Please start over.",
+      "GOOGLE_FAILED": "Google sign-in failed. Please try again.",
+      "REQUIRED_FIELDS": "Please fill in all required fields",
+      "INVALID_CREDENTIALS": "Incorrect email or password",
+      "UNAUTHORIZED": "Your session has expired. Please log in again.",
+      "PRODUCT_UNAVAILABLE": "This product is no longer available: {{product}}",
+      "VARIANT_REQUIRED": "Choose the product options: {{product}}",
+      "VARIANT_NOT_FOUND": "The selected combination no longer exists: {{product}}",
+      "VARIANT_INACTIVE": "This option is unavailable: {{product}}",
+      "OUT_OF_STOCK": "Not enough stock: {{product}}",
+      "ORDER_NOT_FOUND": "Order not found",
+      "NOT_CANCELLABLE": "This order has already been confirmed and can't be cancelled here"
+    }
+  },
+  "accessGate": {
+    "title": "Development Environment",
+    "line1": "This is a test environment (DEV).",
+    "line2": "Enter the access code to continue.",
+    "placeholder": "Access code",
+    "checking": "Checking...",
+    "submit": "Enter",
+    "required": "Please enter the access code",
+    "invalid": "Invalid access code",
+    "footer": "Restricted development access"
+  }
+}

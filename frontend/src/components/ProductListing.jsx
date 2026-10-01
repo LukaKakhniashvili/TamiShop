@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import ProductCard from './ProductCard';
 import Icon from './Icon';
@@ -6,30 +7,27 @@ import { EmptyState, Pagination, ProductGridSkeleton } from './ui';
 
 const PAGE_SIZE = 12;
 
-export const SORT_OPTIONS = [
-  { value: 'newest', label: 'უახლესი' },
-  { value: 'name_asc', label: 'სახელი: A–Z / ა–ჰ' },
-  { value: 'name_desc', label: 'სახელი: Z–A / ჰ–ა' },
-  { value: 'price_asc', label: 'ფასი: ზრდადობით' },
-  { value: 'price_desc', label: 'ფასი: კლებადობით' },
-  { value: 'discount_desc', label: 'ფასდაკლება: უდიდესი %' },
-];
+// წარწერები — თარგმანებში: catalog.sort.<value>
+export const SORT_OPTIONS = ['newest', 'name_asc', 'name_desc', 'price_asc', 'price_desc', 'discount_desc'].map((value) => ({ value }));
 export const DEFAULT_SORT = 'newest';
 export const normalizeSort = (value) => (SORT_OPTIONS.some((o) => o.value === value) ? value : DEFAULT_SORT);
 
-const SortSelect = ({ value, onChange }) => (
-  <label className="sort-control">
-    <Icon name="sort" size={16} />
-    <span className="sr-only">სორტირება</span>
-    <select className="select input-sm" value={value} onChange={(e) => onChange(e.target.value)} aria-label="სორტირება">
-      {SORT_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  </label>
-);
+const SortSelect = ({ value, onChange }) => {
+  const { t } = useTranslation();
+  return (
+    <label className="sort-control">
+      <Icon name="sort" size={16} />
+      <span className="sr-only">{t('catalog.sortLabel')}</span>
+      <select className="select input-sm" value={value} onChange={(e) => onChange(e.target.value)} aria-label={t('catalog.sortLabel')}>
+        {SORT_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {t(`catalog.sort.${o.value}`)}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+};
 
 /**
  * პროდუქტების სია ფილტრებით, სორტირებითა და გვერდებით.
@@ -51,6 +49,9 @@ const ProductListing = ({
   emptyText,
   emptyAction,
 }) => {
+  const { t, i18n } = useTranslation();
+  // სახელით სორტირება სერვერზე არჩეული ენით ხდება — ენის შეცვლისას სია თავიდან იტვირთება
+  const sortLanguage = sort.startsWith('name') ? i18n.language : null;
   const [data, setData] = useState({ products: [], pages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -82,7 +83,7 @@ const ProductListing = ({
     return () => {
       cancelled = true;
     };
-  }, [category, search, minDiscount, discounted, newOnly, sort, page]);
+  }, [category, search, minDiscount, discounted, newOnly, sort, page, sortLanguage]);
 
   // გვერდის შეცვლისას სია ჩანდეს, მაგრამ არა პირველ ჩატვირთვაზე
   useEffect(() => {
@@ -105,7 +106,7 @@ const ProductListing = ({
             <label className="switch discount-toggle">
               <input type="checkbox" checked={discounted} onChange={(e) => onDiscountedChange(e.target.checked)} />
               <span className="track" />
-              მხოლოდ ფასდაკლებული
+              {t('catalog.discountedOnly')}
             </label>
           )}
           {onSortChange && <SortSelect value={sort} onChange={onSortChange} />}
@@ -115,7 +116,7 @@ const ProductListing = ({
       {loading ? (
         <ProductGridSkeleton count={8} />
       ) : error ? (
-        <EmptyState icon="alert" title="ვერ ჩაიტვირთა" text="პროდუქტების ჩატვირთვა ვერ მოხერხდა. სცადეთ გვერდის განახლება." />
+        <EmptyState icon="alert" title={t('catalog.loadErrorTitle')} text={t('catalog.loadErrorText')} />
       ) : data.products.length === 0 ? (
         <EmptyState icon="search" title={emptyTitle} text={emptyText}>
           {emptyAction}

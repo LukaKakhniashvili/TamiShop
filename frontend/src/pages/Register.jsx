@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/UIContext';
@@ -9,8 +10,12 @@ import VerificationCodePanel from '../components/VerificationCodePanel';
 import { Alert, Field, IconInput, PasswordInput } from '../components/ui';
 import useVerificationCode, { formatClock } from '../hooks/useVerificationCode';
 import { validatePassword } from '../utils/passwordPolicy';
+import { apiErrorMessage } from '../i18n/errors';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 const Register = () => {
+  const { t } = useTranslation();
+  useDocumentMeta(t('auth.register.metaTitle'));
   const { register: authRegister } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -54,7 +59,7 @@ const Register = () => {
 
   const handleSendOtp = async () => {
     if (!form.email) {
-      setError('გთხოვთ, ჯერ შეიყვანოთ ელ. ფოსტა');
+      setError(t('auth.enterEmailFirst'));
       return;
     }
     setError('');
@@ -68,14 +73,14 @@ const Register = () => {
     setForm((f) => ({ ...f, code: '' }));
     toast({
       type: 'success',
-      title: r.isResend ? 'ახალი კოდი გაიგზავნა' : 'ვერიფიკაციის კოდი წარმატებით გაიგზავნა',
-      description: r.isResend ? 'ახალი ვერიფიკაციის კოდი გაიგზავნა თქვენს ელ. ფოსტაზე' : undefined,
+      title: r.isResend ? t('otp.resentTitle') : t('otp.sentTitle'),
+      description: r.isResend ? t('otp.resentText') : undefined,
     });
   };
 
   const handleVerifyOtp = async () => {
     if (!form.code) {
-      setError('გთხოვთ, შეიყვანოთ 4-ნიშნა კოდი');
+      setError(t('otp.enterCode'));
       return;
     }
     setError('');
@@ -84,13 +89,13 @@ const Register = () => {
       await api.post('/auth-verification-code-verify', { email: form.email, code: form.code });
       setEmailVerified(true);
       vc.clearStorage();
-      setSuccess('ელ. ფოსტა წარმატებით დადასტურდა!');
+      setSuccess(t('auth.register.emailVerified'));
     } catch (err) {
       const res = err.response?.data;
       if (['CODE_EXPIRED', 'TOO_MANY_ATTEMPTS', 'CODE_NOT_FOUND'].includes(res?.code)) setForm((f) => ({ ...f, code: '' }));
       // ვადაგასვლას პანელის გაფრთხილება აჩვენებს (ახალი კოდის ღილაკთან ერთად) — ზედა შეცდომა აღარ დუბლირდება
       if (res?.code === 'CODE_EXPIRED') vc.markExpired();
-      else setError(res?.message || 'კოდის შემოწმება ვერ მოხერხდა');
+      else setError(apiErrorMessage(err, 'otp.verifyFailed'));
     } finally {
       setVerifyingOtp(false);
     }
@@ -102,7 +107,7 @@ const Register = () => {
     setSuccess('');
 
     if (!emailVerified) {
-      setError('რეგისტრაციისთვის აუცილებელია ელ. ფოსტის ვერიფიკაცია');
+      setError(t('auth.register.verificationRequired'));
       return;
     }
 
@@ -115,7 +120,7 @@ const Register = () => {
     setSubmitting(true);
     try {
       await authRegister(form);
-      toast({ title: 'ანგარიში შეიქმნა!', description: 'კეთილი იყოს თქვენი მობრძანება' });
+      toast({ title: t('auth.register.created'), description: t('auth.register.welcome') });
       navigate(location.state?.from || '/', { replace: true });
     } catch (err) {
       // ვერიფიკაციის ვადა (30 წთ) ამოიწურა — ელ. ფოსტა თავიდან უნდა დადასტურდეს
@@ -124,7 +129,7 @@ const Register = () => {
         vc.reset();
         setForm((f) => ({ ...f, code: '' }));
       }
-      setError(err.response?.data?.message || 'რეგისტრაცია ვერ მოხერხდა. სცადეთ თავიდან.');
+      setError(apiErrorMessage(err, 'auth.register.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -137,19 +142,19 @@ const Register = () => {
           <div className="brand-mark">
             <Icon name="sparkle" size={22} />
           </div>
-          <h1>ანგარიშის შექმნა</h1>
-          <p>დარეგისტრირდით და მიიღეთ ექსკლუზიური შეთავაზებები</p>
+          <h1>{t('auth.register.title')}</h1>
+          <p>{t('auth.register.subtitle')}</p>
         </div>
 
         <div className="steps" aria-hidden="true">
           <div className={`step ${emailVerified ? 'done' : 'active'}`}>
             <span className="dot">{emailVerified ? <Icon name="check" size={14} strokeWidth={3} /> : 1}</span>
-            ელ. ფოსტა
+            {t('auth.register.stepEmail')}
           </div>
           <div className={`line ${emailVerified ? 'done' : ''}`} />
           <div className={`step ${emailVerified ? 'active' : ''}`}>
             <span className="dot">2</span>
-            მონაცემები
+            {t('auth.register.stepDetails')}
           </div>
         </div>
 
@@ -157,7 +162,7 @@ const Register = () => {
           <Alert>{error}</Alert>
           {!error && <Alert type="success">{success}</Alert>}
 
-          <Field label="ელ. ფოსტა" required>
+          <Field label={t('auth.email')} required>
             <div className="input-row">
               <div>
                 <IconInput
@@ -174,7 +179,7 @@ const Register = () => {
               </div>
               {emailVerified ? (
                 <span className="verified-badge">
-                  <Icon name="check" size={16} strokeWidth={3} /> დადასტურდა
+                  <Icon name="check" size={16} strokeWidth={3} /> {t('auth.register.verified')}
                 </span>
               ) : (
                 !vc.codeSent && (
@@ -187,12 +192,12 @@ const Register = () => {
                   >
                     {vc.sending === 'initial' ? (
                       <>
-                        <span className="spinner" /> იგზავნება...
+                        <span className="spinner" /> {t('common.sending')}
                       </>
                     ) : vc.resendIn > 0 ? (
                       <span className="otp-timer">{formatClock(vc.resendIn)}</span>
                     ) : (
-                      'კოდის გაგზავნა'
+                      t('otp.send')
                     )}
                   </button>
                 )
@@ -213,24 +218,24 @@ const Register = () => {
           )}
 
           <div className="form-grid">
-            <Field label="სახელი" required>
+            <Field label={t('checkout.firstName')} required>
               <input className="input" name="firstName" value={form.firstName} onChange={handleChange} required disabled={submitting} autoComplete="given-name" />
             </Field>
-            <Field label="გვარი">
+            <Field label={t('checkout.lastName')}>
               <input className="input" name="lastName" value={form.lastName} onChange={handleChange} disabled={submitting} autoComplete="family-name" />
             </Field>
-            <Field label="ტელეფონი">
+            <Field label={t('auth.phone')}>
               <input className="input" name="phone" type="tel" value={form.phone} onChange={handleChange} disabled={submitting} autoComplete="tel" />
             </Field>
-            <Field label="ქალაქი">
+            <Field label={t('checkout.city')}>
               <input className="input" name="city" value={form.city} onChange={handleChange} disabled={submitting} autoComplete="address-level2" />
             </Field>
-            <Field label="მისამართი (ქუჩა, ნომერი)" className="span-2">
+            <Field label={t('auth.register.street')} className="span-2">
               <input className="input" name="street" value={form.street} onChange={handleChange} disabled={submitting} autoComplete="street-address" />
             </Field>
           </div>
 
-          <Field label="პაროლი" required>
+          <Field label={t('auth.password')} required>
             <PasswordInput name="password" value={form.password} onChange={handleChange} required disabled={submitting} autoComplete="new-password" />
             <PasswordRules password={form.password} />
           </Field>
@@ -238,19 +243,19 @@ const Register = () => {
           <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={!emailVerified || submitting}>
             {submitting ? (
               <>
-                <span className="spinner" /> რეგისტრაცია...
+                <span className="spinner" /> {t('auth.register.submitting')}
               </>
             ) : (
-              'რეგისტრაცია'
+              t('auth.register.submit')
             )}
           </button>
-          {!emailVerified && <p className="field-hint" style={{ textAlign: 'center', marginTop: -6 }}>რეგისტრაციისთვის ჯერ დაადასტურეთ ელ. ფოსტა</p>}
+          {!emailVerified && <p className="field-hint" style={{ textAlign: 'center', marginTop: -6 }}>{t('auth.register.verifyFirstHint')}</p>}
         </div>
 
         <p className="auth-foot">
-          უკვე გაქვთ ანგარიში?{' '}
+          {t('auth.register.haveAccount')}{' '}
           <Link to="/login" state={location.state} className="link">
-            შესვლა
+            {t('auth.login.submit')}
           </Link>
         </p>
       </form>

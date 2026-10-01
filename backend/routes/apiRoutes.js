@@ -69,7 +69,9 @@ router.post('/order-create', protect, orders.createOrder);
 router.get('/order-my-list', protect, orders.getMyOrders);
 router.post('/order-cancel/:id', protect, orders.cancelMyOrder);
 router.get('/order-list', ...staff, orders.getOrders);
-router.put('/order-status-update/:id', ...staff, orders.updateOrderStatus);
+router.get('/order-export', ...staff, orders.exportOrders); // Excel — იგივე ფილტრები, გვერდების გარეშე
+router.put('/order-status-update/:id', ...staff, orders.updateOrderStatus); // მხოლოდ შემდეგი ნაბიჯი (workflow)
+router.post('/order-admin-cancel/:id', ...staff, orders.cancelOrderAdmin); // გაუქმება — ცალკე მოქმედება
 
 // ---- მომხმარებლები (ადმინი)
 router.get('/user-list', ...admin, users.getUsers);

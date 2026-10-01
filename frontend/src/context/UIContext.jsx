@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Icon from '../components/Icon';
+import i18n from '../i18n';
 
 const UIContext = createContext(null);
 
@@ -43,7 +44,7 @@ const Toast = ({ toast, onClose }) => {
           {toast.action.label}
         </Link>
       )}
-      <button className="toast-close" onClick={close} aria-label="დახურვა">
+      <button className="toast-close" onClick={close} aria-label={i18n.t('common.close')}>
         <Icon name="x" size={16} />
       </button>
       <span className="toast-timer" />
@@ -71,14 +72,14 @@ const ConfirmDialog = ({ options, onResult }) => {
         <div className="dialog-actions">
           {/* დესტრუქციულ დიალოგში ფოკუსი უსაფრთხო ღილაკზეა — Enter-ით შემთხვევით არაფერი წაიშლება */}
           <button className="btn" onClick={() => onResult(false)} autoFocus={options.danger !== false}>
-            {options.cancelText || 'გაუქმება'}
+            {options.cancelText || i18n.t('common.cancel')}
           </button>
           <button
             className={`btn ${options.danger === false ? 'btn-primary' : 'btn-danger'}`}
             onClick={() => onResult(true)}
             autoFocus={options.danger === false}
           >
-            {options.confirmText || 'წაშლა'}
+            {options.confirmText || i18n.t('common.delete')}
           </button>
         </div>
       </div>

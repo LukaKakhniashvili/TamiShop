@@ -1,14 +1,29 @@
 const mongoose = require('mongoose');
 const { DELIVERY_METHODS, PAYMENT_METHODS, PAYMENT_BANKS, PAYMENT_STATUSES } = require('../constants/checkout');
+const { ORDER_STATUSES } = require('../constants/orderStatus');
 
 const orderItemSchema = new mongoose.Schema(
   {
     product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     name: { type: String, required: true },
+    // სახელის თარგმანები შეკვეთის მომენტში ({ en: { name }, ru: { name } }) — მომხმარებლის ენაზე საჩვენებლად
+    translations: { type: mongoose.Schema.Types.Mixed, default: undefined },
     price: { type: Number, required: true },
     // თავდაპირველი ფასი შეკვეთის მომენტში (ფასდაკლების ჩვენებისთვის)
     oldPrice: { type: Number, default: null },
     quantity: { type: Number, required: true, min: 1 },
+    // ვარიანტის snapshot შეკვეთის მომენტში — პროდუქტის შემდგომი ცვლილებები ისტორიულ შეკვეთას არ ცვლის
+    variant: {
+      type: new mongoose.Schema(
+        {
+          id: { type: mongoose.Schema.Types.ObjectId },
+          sku: { type: String, default: '' },
+          options: { type: [{ _id: false, name: String, value: String, translations: mongoose.Schema.Types.Mixed }], default: [] },
+        },
+        { _id: false }
+      ),
+      default: undefined,
+    },
   },
   { _id: false }
 );
@@ -58,11 +73,29 @@ const orderSchema = new mongoose.Schema(
       refundRequired: { type: Boolean },
     },
 
+    // მომხმარებლის ენა შეკვეთისას (წერილების ენისთვის); ძველ შეკვეთებს არ აქვს → ka
+    language: { type: String, enum: ['ka', 'en', 'ru'], default: 'ka' },
+
+    // workflow (დასაშვები გადასვლები): constants/orderStatus.js
     status: {
       type: String,
-      enum: ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
+      enum: ORDER_STATUSES,
       default: 'pending',
     },
+    // ვარიანტების მარაგი დაჯავშნილია ამ შეკვეთისთვის (გაუქმებისას ბრუნდება მხოლოდ ერთხელ)
+    inventory: {
+      reserved: { type: Boolean, default: false },
+    },
+    // სტატუსის ცვლილებების ისტორია (ადმინის მოქმედებები)
+    statusHistory: [
+      {
+        _id: false,
+        from: { type: String },
+        to: { type: String },
+        at: { type: Date, default: Date.now },
+        by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      },
+    ],
 
     // დადასტურების წერილის მდგომარეობა (წარუმატებლობა შეკვეთაზე გავლენას არ ახდენს)
     notifications: {

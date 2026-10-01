@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/UIContext';
+import { useTranslation } from 'react-i18next';
+import LanguageSwitcher from './LanguageSwitcher';
 import Icon from './Icon';
 import { getInitials } from './ui';
 import { BRAND } from '../constants';
@@ -22,6 +24,7 @@ const useTheme = () => {
 };
 
 const SearchBox = ({ className = '' }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const location = useLocation();
@@ -48,16 +51,16 @@ const SearchBox = ({ className = '' }) => {
         <input
           className="input"
           type="search"
-          placeholder="მოძებნე პროდუქტი..."
+          placeholder={t('nav.searchPlaceholder')}
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          aria-label="ძებნა"
+          aria-label={t('nav.search')}
         />
         {value && (
           <button
             type="button"
             className="input-action"
-            aria-label="გასუფთავება"
+            aria-label={t('common.clear')}
             onClick={() => {
               setValue('');
               if (params.get('search')) navigate('/products');
@@ -73,6 +76,7 @@ const SearchBox = ({ className = '' }) => {
 
 // ანგარიშის მენიუ — დესკტოპზე სახელით, მობილურზე კომპაქტური ავატარით (CSS); ორივეგან ერთი და იგივე გასვლის ლოგიკა
 const UserMenu = ({ user, onLogout }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const location = useLocation();
@@ -100,7 +104,7 @@ const UserMenu = ({ user, onLogout }) => {
         className="user-trigger"
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="ანგარიშის მენიუ"
+        aria-label={t('nav.accountMenu')}
         onClick={() => setOpen((o) => !o)}
       >
         <span className="avatar">{getInitials(user)}</span>
@@ -116,14 +120,14 @@ const UserMenu = ({ user, onLogout }) => {
             <span>{user.email}</span>
           </div>
           <Link to="/profile" className="dropdown-item" role="menuitem">
-            <Icon name="user" size={18} /> ჩემი პროფილი
+            <Icon name="user" size={18} /> {t('nav.myProfile')}
           </Link>
           <Link to="/profile?tab=orders" className="dropdown-item" role="menuitem">
-            <Icon name="receipt" size={18} /> ჩემი შეკვეთები
+            <Icon name="receipt" size={18} /> {t('nav.myOrders')}
           </Link>
           {isStaff && (
             <Link to="/admin" className="dropdown-item" role="menuitem">
-              <Icon name="dashboard" size={18} /> სამართავი პანელი
+              <Icon name="dashboard" size={18} /> {t('nav.adminPanel')}
             </Link>
           )}
           <button
@@ -134,7 +138,7 @@ const UserMenu = ({ user, onLogout }) => {
               onLogout();
             }}
           >
-            <Icon name="logout" size={18} /> გასვლა
+            <Icon name="logout" size={18} /> {t('nav.logout')}
           </button>
         </div>
       )}
@@ -143,6 +147,7 @@ const UserMenu = ({ user, onLogout }) => {
 };
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
   const toast = useToast();
@@ -152,7 +157,7 @@ const Navbar = () => {
   // შეტყობინება და მთავარ გვერდზე გადასვლა (დაცული გვერდი აღარ რჩება გახსნილი)
   const handleLogout = () => {
     logout();
-    toast({ title: 'წარმატებით გამოხვედით სისტემიდან.' });
+    toast({ title: t('nav.loggedOut') });
     navigate('/', { replace: true });
   };
   const [theme, toggleTheme] = useTheme();
@@ -173,7 +178,7 @@ const Navbar = () => {
       <header className={`nav ${scrolled ? 'is-scrolled' : ''}`}>
         <div className="container">
           <div className="nav-inner">
-            <Link to="/" className="brand" aria-label="მთავარი გვერდი">
+            <Link to="/" className="brand" aria-label={t('nav.homePage')}>
               <span className="brand-mark">
                 <Icon name="cart" size={18} strokeWidth={2.5} />
               </span>
@@ -184,24 +189,25 @@ const Navbar = () => {
 
             <NavLink to="/products" className={({ isActive }) => `nav-catalog nav-desktop-only ${isActive ? 'active' : ''}`}>
               <Icon name="grid" size={18} />
-              კატალოგი
+              {t('nav.catalog')}
             </NavLink>
 
             <SearchBox className="desktop" />
 
             <div className="nav-actions">
+              <LanguageSwitcher />
               <button
                 onClick={toggleTheme}
                 className="icon-btn theme-toggle"
-                aria-label={theme === 'light' ? 'მუქი თემა' : 'ღია თემა'}
-                title={theme === 'light' ? 'მუქი თემა' : 'ღია თემა'}
+                aria-label={theme === 'light' ? t('nav.darkTheme') : t('nav.lightTheme')}
+                title={theme === 'light' ? t('nav.darkTheme') : t('nav.lightTheme')}
               >
                 <span className="icon-anim" key={theme}>
                   <Icon name={theme === 'light' ? 'moon' : 'sun'} size={20} />
                 </span>
               </button>
 
-              <Link to="/cart" className="icon-btn cart-btn nav-desktop-only" aria-label={`კალათა (${totalItems})`}>
+              <Link to="/cart" className="icon-btn cart-btn nav-desktop-only" aria-label={t('nav.cartWithCount', { count: totalItems })}>
                 <Icon name="cart" size={21} />
                 {totalItems > 0 && (
                   <span className="count" key={totalItems}>
@@ -216,7 +222,7 @@ const Navbar = () => {
               ) : (
                 <div className="nav-desktop-only">
                   <Link to="/login" className="btn btn-dark btn-sm" style={{ marginLeft: 8 }}>
-                    <Icon name="login" size={16} /> შესვლა
+                    <Icon name="login" size={16} /> {t('nav.login')}
                   </Link>
                 </div>
               )}
@@ -226,14 +232,14 @@ const Navbar = () => {
         </div>
       </header>
 
-      <nav className="bottom-nav" aria-label="მობილური ნავიგაცია">
+      <nav className="bottom-nav" aria-label={t('nav.mobileNav')}>
         <NavLink to="/" end className={navItem}>
           <Icon name="home" size={22} />
-          <span>მთავარი</span>
+          <span>{t('nav.home')}</span>
         </NavLink>
         <NavLink to="/products" className={navItem}>
           <Icon name="grid" size={22} />
-          <span>კატალოგი</span>
+          <span>{t('nav.catalog')}</span>
         </NavLink>
         <NavLink to="/cart" className={navItem}>
           <Icon name="cart" size={22} />
@@ -242,17 +248,17 @@ const Navbar = () => {
               {totalItems > 99 ? '99+' : totalItems}
             </span>
           )}
-          <span>კალათა</span>
+          <span>{t('nav.cart')}</span>
         </NavLink>
         {isStaff && (
           <NavLink to="/admin" className={navItem}>
             <Icon name="dashboard" size={22} />
-            <span>პანელი</span>
+            <span>{t('nav.panel')}</span>
           </NavLink>
         )}
         <NavLink to={user ? '/profile' : '/login'} className={navItem}>
           <Icon name="user" size={22} />
-          <span>{user ? 'პროფილი' : 'შესვლა'}</span>
+          <span>{user ? t('nav.profile') : t('nav.login')}</span>
         </NavLink>
       </nav>
     </>

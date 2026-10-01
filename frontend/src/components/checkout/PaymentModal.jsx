@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
+import i18n from '../../i18n';
+import { apiErrorMessage } from '../../i18n/errors';
 import Icon from '../Icon';
 import { formatPrice } from '../ui';
 
@@ -23,6 +26,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * შედეგს ყოველთვის სერვერი ადგენს (GET /payments/:orderId/status) — არა iframe-ის URL.
  */
 const PaymentModal = ({ order, bank, onClose, onPaid }) => {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState('init');
   const [session, setSession] = useState(null);
   const [frameLoaded, setFrameLoaded] = useState(false);
@@ -56,7 +60,7 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
         finishPaid(err.response.data.order);
         return;
       }
-      setMessage(err.response?.data?.message || 'გადახდის გვერდი ვერ ჩაიტვირთა. შეამოწმეთ ინტერნეტ კავშირი და სცადეთ თავიდან.');
+      setMessage(apiErrorMessage(err, 'payment.loadFailedText'));
       setPhase('error');
     }
   }, [order._id, bank.id, finishPaid]);
@@ -73,9 +77,9 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
       return true;
     }
     if (data.status === 'failed' || data.status === 'cancelled') {
-      setMessage(
-        data.message || (data.status === 'cancelled' ? 'გადახდა გაუქმდა.' : 'ბანკმა გადახდა უარყო.')
-      );
+      // სერვერის ტექსტი ქართულია — სხვა ენაზე სტატუსის მიხედვით ვთარგმნით
+      const fallback = i18n.t(data.status === 'cancelled' ? 'payment.cancelled' : 'payment.declined');
+      setMessage(i18n.language === 'ka' && data.message ? data.message : fallback);
       setPhase('failed');
       return true;
     }
@@ -114,10 +118,10 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
   // ფონური შემოწმება, სანამ ბანკის გვერდი ღიაა (მაგ. თუ გადახდა ახალ ფანჯარაში დასრულდა)
   useEffect(() => {
     if (phase !== 'frame') return;
-    const t = setInterval(() => {
+    const timer = setInterval(() => {
       checkStatus().catch(() => {});
     }, BACKGROUND_POLL_MS);
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, [phase, checkStatus]);
 
   // Escape, სქროლის ბლოკი, ფოკუსი
@@ -149,13 +153,13 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
         <header className="pay-modal-head">
           <span className={`bank-mark bank-${bank.id.toLowerCase()}`}>{bank.short}</span>
           <div className="pay-modal-title">
-            <strong id="pay-modal-title">{bank.name}</strong>
+            <strong id="pay-modal-title">{t(`checkout.banks.${bank.id}`, { defaultValue: bank.name })}</strong>
             <span>
-              <Icon name="lock" size={13} /> დაცული გადახდა · შეკვეთა {order.orderNumber}
+              <Icon name="lock" size={13} /> {t('payment.secureOrder', { number: order.orderNumber })}
             </span>
           </div>
           <span className="pay-modal-amount">{formatPrice(order.totalPrice)}</span>
-          <button type="button" className="icon-btn" onClick={onClose} aria-label="დახურვა">
+          <button type="button" className="icon-btn" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={20} />
           </button>
         </header>
@@ -166,7 +170,7 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
               <iframe
                 key={session.sessionId}
                 src={session.paymentUrl}
-                title={`${bank.latin} — გადახდის გვერდი`}
+                title={t('payment.frameTitle', { bank: bank.latin })}
                 className={`pay-frame ${frameLoaded ? 'loaded' : ''}`}
                 onLoad={() => setFrameLoaded(true)}
                 allow="payment"
@@ -175,7 +179,7 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
               {!frameLoaded && (
                 <div className="pay-state overlay">
                   <span className="spinner" />
-                  <strong>იტვირთება ბანკის გვერდი...</strong>
+                  <strong>{t('payment.loadingBank')}</strong>
                 </div>
               )}
             </>
@@ -184,24 +188,24 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
           {phase === 'init' && (
             <div className="pay-state">
               <span className="spinner" />
-              <strong>ბანკთან დაკავშირება...</strong>
-              <span>მზადდება დაცული გადახდის გვერდი</span>
+              <strong>{t('payment.connecting')}</strong>
+              <span>{t('payment.preparing')}</span>
             </div>
           )}
 
           {phase === 'verifying' && (
             <div className="pay-state">
               <span className="spinner" />
-              <strong>{stillPending ? 'ბანკი ჯერ ამუშავებს გადახდას' : 'მოწმდება გადახდის სტატუსი...'}</strong>
+              <strong>{stillPending ? t('payment.stillProcessing') : t('payment.verifying')}</strong>
               {stillPending ? (
                 <>
-                  <span>ეს შეიძლება რამდენიმე წამს გაგრძელდეს. გთხოვთ, ხელახლა არ გადაიხადოთ.</span>
+                  <span>{t('payment.stillProcessingText')}</span>
                   <button type="button" className="btn" onClick={verify}>
-                    <Icon name="refresh" size={16} /> ხელახლა შემოწმება
+                    <Icon name="refresh" size={16} /> {t('payment.checkAgain')}
                   </button>
                 </>
               ) : (
-                <span>გთხოვთ, არ დახუროთ ფანჯარა</span>
+                <span>{t('payment.dontClose')}</span>
               )}
             </div>
           )}
@@ -211,15 +215,15 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
               <span className="pay-state-icon">
                 <Icon name="alert" size={28} />
               </span>
-              <strong>{phase === 'failed' ? 'გადახდა ვერ შესრულდა' : 'გადახდის გვერდი ვერ ჩაიტვირთა'}</strong>
+              <strong>{phase === 'failed' ? t('payment.failedTitle') : t('payment.loadFailedTitle')}</strong>
               <span>{message}</span>
-              <span className="muted">თანხა არ ჩამოგეჭრათ. შეკვეთა შენახულია — შეგიძლიათ სცადოთ თავიდან.</span>
+              <span className="muted">{t('payment.notCharged')}</span>
               <div className="pay-state-actions">
                 <button type="button" className="btn" onClick={onClose}>
-                  სხვა მეთოდის არჩევა
+                  {t('payment.otherMethod')}
                 </button>
                 <button type="button" className="btn btn-primary" onClick={start}>
-                  <Icon name="refresh" size={16} /> თავიდან ცდა
+                  <Icon name="refresh" size={16} /> {t('common.retry')}
                 </button>
               </div>
             </div>
@@ -229,11 +233,11 @@ const PaymentModal = ({ order, bank, onClose, onPaid }) => {
         {phase === 'frame' && session?.paymentUrl && (
           <footer className="pay-modal-foot">
             <span>
-              <Icon name="shield" size={14} /> ბარათის მონაცემებს მხოლოდ ბანკი ამუშავებს
-              {sandbox && <span className="pill pill-warning no-dot">სატესტო რეჟიმი</span>}
+              <Icon name="shield" size={14} /> {t('checkout.cardSecurityNote')}
+              {sandbox && <span className="pill pill-warning no-dot">{t('payment.testMode')}</span>}
             </span>
             <a href={session.paymentUrl} target="_blank" rel="noopener">
-              გვერდი არ ჩანს? გახსენით ახალ ფანჯარაში <Icon name="arrowRight" size={14} />
+              {t('payment.openNewWindow')} <Icon name="arrowRight" size={14} />
             </a>
           </footer>
         )}

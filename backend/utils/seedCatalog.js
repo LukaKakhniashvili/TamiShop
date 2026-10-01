@@ -9,6 +9,7 @@ const connectDB = require('../config/db');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
 const { categories, products, placeholderUpgrades } = require('./catalogData');
+const { applyContentTranslations } = require('./migrateTranslations');
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
@@ -98,6 +99,8 @@ const upsertCategories = async () => {
     if (doc) {
       doc.order = order;
       if (!doc.description) doc.description = c.description;
+      // თარგმანები ემატება მხოლოდ თუ ჯერ არ არის (ადმინის მიერ შეყვანილი არ იცვლება)
+      if (!doc.translations && c.translations) doc.translations = c.translations;
       if (!DRY_RUN) await doc.save();
       console.log(`  ↻ ${c.name} (არსებული)`);
     } else {
@@ -161,14 +164,21 @@ const run = async () => {
     console.log(`  ↻ ${p.match} → ${p.name}`);
   }
 
+  console.log('თარგმანები (EN/RU):');
+  const tr = await applyContentTranslations({ dryRun: DRY_RUN, log: (m) => console.log(m) });
+  if (tr.errors.length) console.warn(`  ! ${tr.errors.length} თარგმანი აკლია — იხ. npm run migrate:translations -- --dry-run`);
+
   const [catCount, prodCount] = await Promise.all([Category.countDocuments(), Product.countDocuments()]);
   console.log(`\nმზადაა. ბაზაში ახლა არის ${catCount} კატეგორია და ${prodCount} პროდუქტი.`);
   await mongoose.connection.close();
   process.exit(0);
 };
 
-run().catch(async (err) => {
-  console.error(err);
-  await mongoose.connection.close().catch(() => {});
-  process.exit(1);
-});
+// მხოლოდ პირდაპირ გაშვებისას (node utils/...) — require()-ით ჩატვირთვა ბაზას არ ეხება
+if (require.main === module) {
+  run().catch(async (err) => {
+    console.error(err);
+    await mongoose.connection.close().catch(() => {});
+    process.exit(1);
+  });
+}

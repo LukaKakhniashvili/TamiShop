@@ -642,6 +642,58 @@ button.chip:hover { background: var(--surface-3); }
 .dropdown-item:hover { background: var(--surface-2); color: var(--text); }
 .dropdown-item.danger:hover { background: var(--danger-soft); color: var(--danger); }
 
+/* ენის არჩევა (header) — დესკტოპზე დროშა + კოდი (ფართო ეკრანზე სრული სახელი), მობილურზე დროშა + კოდი */
+.flag {
+  display: inline-flex;
+  width: 22px;
+  height: 15px;
+  border-radius: 3px;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.flag svg { width: 100%; height: 100%; display: block; }
+.dark .flag { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18); }
+
+.lang-switcher { position: relative; }
+.lang-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 42px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease, color var(--dur-fast) ease;
+}
+.lang-trigger:hover,
+.lang-trigger[aria-expanded='true'] { background: var(--surface-2); border-color: var(--border); color: var(--text); }
+.lang-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lang-trigger .lang-label { display: none; font-weight: 700; letter-spacing: 0; }
+.lang-trigger .chev { color: var(--muted); transition: transform var(--dur) var(--ease-out); }
+.lang-trigger[aria-expanded='true'] .chev { transform: rotate(180deg); }
+.lang-menu { width: 200px; }
+.lang-option { min-height: 44px; }
+.lang-option .flag { width: 24px; height: 16px; }
+.lang-option span:not(.flag) { flex: 1; }
+.lang-option.active { color: var(--text); background: var(--accent-soft); }
+.lang-option .lang-check { color: var(--accent-ink); flex-shrink: 0; }
+.lang-option:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+@media (min-width: 1280px) {
+  .lang-trigger .lang-label { display: inline; }
+  .lang-trigger .lang-short { display: none; }
+}
+
+/* „-დან" ქართულად ფასის შემდეგ იწერება, სხვა ენებზე („from", „от") — ფასის წინ */
+html:not([lang='ka']) .pc-from { order: -1; }
+
 .nav-mobile-search { display: none; padding-bottom: 12px; max-width: none; }
 
 /* Bottom nav (mobile) */
@@ -1833,6 +1885,202 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
 .stat-icon.warn { background: var(--warning-soft); color: var(--warning); }
 .stat-icon.ok { background: var(--success-soft); color: var(--success); }
 
+/* ==========================================================================
+   პროდუქტის ოფციები / ვარიანტები
+   ========================================================================== */
+/* არჩეული კონფიგურაცია (კალათა, checkout, შეკვეთები) */
+.line-options { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.line-option-name { color: var(--muted); font-weight: 600; }
+.order-lines .line-options, .order-items .line-options { display: flex; }
+.order-item-sku { display: block; font-size: 11px; }
+
+/* ბარათი: „-დან" ფასი */
+.pc-price { display: flex; align-items: baseline; gap: 4px; min-width: 0; flex-wrap: wrap; }
+.pc-from { font-size: 11px; font-weight: 700; color: var(--muted); order: 2; }
+
+/* პროდუქტის გვერდი — არჩევა */
+.pd-price-range .price-now { font-size: clamp(20px, 6.2vw, 28px); white-space: nowrap; }
+.pd-variant-hint { font-size: 13px; margin-top: -6px; }
+.variant-selector { display: grid; gap: 18px; }
+.variant-option { display: grid; gap: 10px; padding: 2px; border-radius: var(--radius); transition: box-shadow var(--dur) ease; }
+.variant-option.is-missing { box-shadow: 0 0 0 2px var(--danger-soft); padding: 10px; }
+.variant-option-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 14px; }
+.variant-option-name { font-weight: 800; }
+.variant-option-name .req { color: var(--danger); margin-left: 2px; }
+.variant-option-value { font-weight: 600; color: var(--text-2); }
+.variant-values { display: flex; flex-wrap: wrap; gap: 8px; }
+.variant-value {
+  position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: 42px; padding: 8px 14px;
+  border-radius: var(--radius); border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+  font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; max-width: 100%;
+  transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
+}
+.variant-value:hover:not(:disabled) { border-color: var(--border-strong); }
+.variant-value:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.variant-value.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); box-shadow: 0 0 0 1px var(--accent); }
+.variant-value-label { overflow-wrap: anywhere; }
+.variant-value.status-soldout .variant-value-label { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.variant-value.status-soldout:not(.selected) { color: var(--muted); }
+.variant-value.status-conflict:not(.selected) { border-style: dashed; color: var(--muted); }
+.variant-value:disabled { opacity: 0.4; cursor: not-allowed; text-decoration: line-through; }
+.variant-swatch { width: 20px; height: 20px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18); flex-shrink: 0; }
+.variant-values.swatches .variant-value { padding-left: 10px; }
+
+/* ადმინი — ოფციების/ვარიანტების რედაქტორი */
+.ve-intro { font-size: 13px; margin: -8px 0 16px; }
+
+/* ადმინი → თარგმანები (EN / RU) */
+.tr-editor { display: flex; flex-direction: column; gap: 16px; }
+.tr-editor .tabs { align-self: flex-start; }
+.tr-tab { display: inline-flex; align-items: center; gap: 8px; }
+.tr-missing { color: var(--accent); font-weight: 900; margin-left: -2px; }
+.tr-note { font-size: 13px; margin: 0; }
+.tr-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; margin-top: 4px; }
+.spec-edit.tr-spec { grid-template-columns: 1fr 1fr; }
+.tr-options { display: flex; flex-direction: column; gap: 10px; }
+.tr-option { display: grid; grid-template-columns: minmax(140px, 220px) 1fr; gap: 8px; align-items: start; padding: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); }
+.tr-option-name { font-weight: 700; }
+.tr-values { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+@media (max-width: 720px) {
+  .tr-option { grid-template-columns: 1fr; }
+  .spec-edit.tr-spec { grid-template-columns: 1fr; }
+  .spec-edit.tr-spec .input:first-child { grid-column: auto; }
+}
+.variant-editor { display: grid; gap: 18px; }
+.ve-options { display: grid; gap: 12px; }
+.ve-option { margin: 0; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); display: grid; gap: 10px; min-width: 0; }
+.ve-option-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ve-option-name { flex: 1 1 200px; min-width: 0; font-weight: 700; }
+.ve-display { flex: 0 1 190px; }
+.ve-required { font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+.ve-option-tools { display: flex; gap: 4px; margin-left: auto; }
+.ve-icon { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); color: var(--text-2); cursor: pointer; flex-shrink: 0; }
+.ve-icon:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text); }
+.ve-icon:disabled { opacity: 0.4; cursor: not-allowed; }
+.ve-icon.danger { color: var(--danger); }
+.ve-icon.danger:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); }
+.rot-90 { transform: rotate(90deg); }
+.ve-values { display: flex; flex-wrap: wrap; gap: 8px; }
+.ve-value { display: inline-flex; align-items: center; gap: 4px; padding: 3px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--border); max-width: 100%; }
+.ve-value .input { width: 128px; max-width: 100%; height: 30px; border: none; background: transparent; padding: 0 6px; }
+.ve-value .ve-icon { width: 26px; height: 26px; border: none; }
+.ve-color { width: 28px; height: 28px; padding: 0; border: none; border-radius: 6px; background: none; cursor: pointer; flex-shrink: 0; }
+.ve-add-value { display: flex; gap: 8px; flex-wrap: wrap; }
+.ve-add-value .input { flex: 1 1 220px; min-width: 0; }
+.ve-add-option { justify-self: start; }
+.ve-variants { display: grid; gap: 12px; border-top: 1px solid var(--border); padding-top: 16px; }
+.ve-variants-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.ve-variants-head h3 { font-size: 15px; font-weight: 800; }
+.ve-variants-head p { font-size: 13px; margin-top: 2px; }
+.ve-variant-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ve-variant-list { display: grid; gap: 10px; }
+.ve-variant { display: grid; gap: 10px; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); }
+.ve-variant.inactive { opacity: 0.6; background: var(--surface-2); }
+.ve-variant-combo, .ve-variant-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px 10px; align-items: end; }
+.ve-variant-combo { grid-template-columns: auto repeat(auto-fit, minmax(130px, 1fr)); }
+.ve-variant-num { font-size: 12px; font-weight: 800; color: var(--muted); align-self: center; padding-top: 14px; }
+.ve-field { display: grid; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); min-width: 0; }
+.ve-field .input, .ve-field .select { width: 100%; min-width: 0; }
+.ve-active { font-size: 13px; align-self: center; }
+.ve-remove { justify-self: end; align-self: center; }
+.ve-empty { font-size: 13px; padding: 8px 0; }
+
+/* ---- ადმინი → შეკვეთები: სტატისტიკა, workflow მოქმედებები */
+.admin-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.order-stats { margin-bottom: 16px; }
+.order-count-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; }
+/* label — საკუთარ (სრული სიგანის) რიგზე, ქვემოთ ხატულა + რიცხვი: სიტყვა შუაზე არ იჭრება */
+.order-count { --tone: var(--text-2); --tone-soft: var(--surface-2); padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'label label' 'icon num'; column-gap: 10px; row-gap: 8px; align-items: center; border-top: 3px solid var(--tone); }
+.order-count-icon { grid-area: icon; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--tone-soft); color: var(--tone); }
+.order-count-label { grid-area: label; font-size: 12px; font-weight: 700; color: var(--muted); min-width: 0; line-height: 1.3; }
+.order-count strong { grid-area: num; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.status-tone-total { --tone: var(--text); --tone-soft: var(--surface-2); }
+.status-tone-pending { --tone: var(--warning); --tone-soft: var(--warning-soft); }
+.status-tone-processing { --tone: var(--info); --tone-soft: var(--info-soft); }
+.status-tone-shipped { --tone: var(--accent-ink); --tone-soft: var(--accent-soft); }
+.status-tone-completed { --tone: var(--success); --tone-soft: var(--success-soft); }
+.status-tone-cancelled { --tone: var(--danger); --tone-soft: var(--danger-soft); }
+
+.order-value-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 12px; }
+.order-value { padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+.order-value-head { display: flex; flex-direction: column; gap: 2px; }
+.order-value-head > span { font-size: 13px; font-weight: 700; color: var(--muted); display: inline-flex; align-items: center; gap: 8px; }
+.order-value-head strong { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.value-bar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; background: var(--surface-2); }
+.value-bar span { height: 100%; transition: width var(--dur-slow) var(--ease-out); }
+.value-bar-completed { background: var(--success); }
+.value-bar-progress { background: var(--warning); }
+.value-rows { display: grid; gap: 8px; margin: 0; }
+.value-row { --tone: var(--text-2); display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--tone-soft, var(--surface-2)); }
+.value-row dt { font-size: 13px; font-weight: 700; color: var(--text); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0; }
+.value-row dt small { flex-basis: 100%; font-size: 12px; font-weight: 600; color: var(--muted); padding-left: 18px; }
+.value-row dd { margin: 0; font-weight: 800; font-size: 16px; color: var(--tone); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.value-row.tone-success { --tone: var(--success); --tone-soft: var(--success-soft); }
+.value-row.tone-warning { --tone: var(--warning); --tone-soft: var(--warning-soft); }
+.value-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tone, currentColor); flex-shrink: 0; display: inline-block; }
+.order-value-cancelled { --tone: var(--danger); border-top: 3px solid var(--danger); }
+.order-value-cancelled .order-value-head strong { color: var(--danger); }
+.order-value-cancelled p { font-size: 13px; }
+.order-stats-note { font-size: 12px; margin-top: 8px; }
+
+.list-range { margin-right: auto; font-size: 13px; align-self: center; }
+.orders-table .phone-link { color: var(--text-2); font-variant-numeric: tabular-nums; }
+.orders-table .phone-link:hover { color: var(--accent-ink); }
+/* კომპაქტური ცხრილი: სვეტები ეტევა კონტეინერში (ჰორიზონტალური სქროლის გარეშე) */
+.orders-table th, .orders-table td { padding-left: 10px; padding-right: 10px; }
+.orders-table th:first-child, .orders-table td:first-child { width: 44px; padding-left: 8px; padding-right: 0; }
+.orders-table td[data-label='სახელი და გვარი'] { min-width: 110px; }
+.orders-table td[data-label='სტატუსი'] { max-width: 170px; }
+.order-actions-cell { width: 1%; }
+.order-manage-btn { height: 32px; padding: 0 12px; font-size: 13px; gap: 6px; white-space: nowrap; }
+.order-payment-line { margin-top: 4px; font-size: 12px; line-height: 1.35; }
+.order-refund { margin-top: 4px; display: flex; width: fit-content; }
+.order-cancel { --btn-fg: var(--danger); --btn-border: var(--danger-soft); color: var(--danger); }
+.order-cancel:hover:not(:disabled) { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
+
+/* შეკვეთის მართვის ფანჯარა */
+.dialog.order-manage { max-width: 520px; }
+.dialog-backdrop:has(.order-manage) { grid-template-columns: minmax(0, 520px); }
+/* დადასტურების ღილაკები: გრძელი წარწერა („სტატუსის შეცვლის დადასტურება") — ერთ რიგში, თუ ეტევა;
+   თუ არა, wrap-reverse-ით ერთმანეთის ქვეშ: მთავარი მოქმედება ზემოთ, „გაუქმება" ქვემოთ. ღილაკი ფანჯრის სიგანეს ვერ აჭარბებს. */
+.order-manage .dialog-actions { flex-wrap: wrap-reverse; gap: 8px; }
+.order-manage .dialog-actions .btn {
+  flex: 1 1 auto; min-width: 0; max-width: 100%; height: auto; min-height: 44px; padding: 10px 16px;
+  white-space: normal; line-height: 1.25; text-align: center; justify-content: center;
+}
+.order-manage .dialog-actions .btn:first-child { flex-grow: 0; }
+.order-manage-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: -4px -6px 14px 0; }
+.order-manage-number { font-size: 15px; font-weight: 800; color: var(--text) !important; margin-top: 2px !important; font-variant-numeric: tabular-nums; }
+.order-manage-info { display: grid; gap: 8px; margin: 0 0 16px; padding: 12px 14px; border-radius: var(--radius); background: var(--surface-2); }
+.order-manage-info > div { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13px; }
+.order-manage-info dt { color: var(--muted); font-weight: 600; flex-shrink: 0; }
+.order-manage-info dd { margin: 0; text-align: right; font-weight: 600; min-width: 0; }
+.order-manage-actions { display: grid; gap: 8px; margin-top: 16px; }
+.order-manage-actions .btn { width: 100%; min-height: 44px; }
+.order-manage-note { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text-2) !important; margin: 0 !important; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--info-soft); }
+.order-manage-note svg { flex-shrink: 0; margin-top: 2px; color: var(--info); }
+.dialog-icon.info-tone { background: var(--info-soft); color: var(--info); }
+
+.status-flow { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.status-flow li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; font-size: 11px; font-weight: 700; color: var(--muted); }
+.status-flow li + li::before { content: ''; position: absolute; top: 11px; right: calc(50% + 14px); width: calc(100% - 24px); height: 2px; background: var(--border); }
+.status-flow li.done::before, .status-flow li.current::before { background: var(--success); }
+.status-flow-dot { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--surface-2); border: 1px solid var(--border); font-size: 11px; font-weight: 800; position: relative; z-index: 1; }
+.status-flow li.done .status-flow-dot { background: var(--success); border-color: var(--success); color: #fff; }
+.status-flow li.current { color: var(--text); }
+.status-flow li.current .status-flow-dot { background: var(--accent); border-color: var(--accent); color: var(--accent-text); box-shadow: 0 0 0 3px var(--accent-soft); }
+.status-flow li.muted-step { opacity: 0.45; }
+.status-flow-label { line-height: 1.25; overflow-wrap: anywhere; }
+
+/* შეკვეთილი პროდუქტები — ბმული პროდუქტის გვერდზე (ახალ ჩანართში) */
+.order-items { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-width: 620px; }
+.order-items li { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.product-link { color: var(--accent-ink); font-weight: 600; text-decoration: none; border-radius: 4px; display: inline; }
+.product-link svg { display: inline-block; vertical-align: -1px; margin-left: 4px; opacity: 0.7; }
+.product-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.product-link:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+.order-item-note { margin-left: 6px; font-size: 11px; padding: 1px 7px; vertical-align: 1px; }
+
 .filters { padding: 16px; margin-bottom: 16px; }
 .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end; }
 .filters-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
@@ -1994,6 +2242,29 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
    Responsive
    ========================================================================== */
 @media (max-width: 1100px) {
+  .order-count-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .order-value-grid { grid-template-columns: minmax(0, 1fr); }
+
+  /* admin → orders: ტაბლეტზე/მობილურზე ცხრილი ბარათებად — ყველა ველი და „მართვა" ჩანს ჰორიზონტალური სქროლის გარეშე */
+  .orders-table, .orders-table tbody { display: block; }
+  .orders-table thead { display: none; }
+  .orders-table tbody tr:not(.order-expand) {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 12px; align-items: center;
+    padding: 12px 14px 12px 6px; border-bottom: 1px solid var(--border);
+  }
+  .orders-table tbody tr:not(.order-expand) td { padding: 0; border: none; width: auto; max-width: none; min-width: 0; }
+  .orders-table td:first-child { grid-column: 1; grid-row: 1 / span 4; align-self: start; }
+  .orders-table td[data-label='შეკვეთა'] { grid-column: 2; grid-row: 1; }
+  .orders-table td[data-label='ჯამი'] { grid-column: 3; grid-row: 1; }
+  .orders-table td[data-label='თარიღი'], .orders-table td[data-label='სახელი და გვარი'], .orders-table td[data-label='ტელეფონი'] { grid-column: 2 / span 2; font-size: 13px; }
+  .orders-table td[data-label='თარიღი'] { display: flex; gap: 6px; align-items: baseline; color: var(--muted); }
+  .orders-table td[data-label='თარიღი'] .sub { margin: 0; }
+  .orders-table td[data-label='სტატუსი'] { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+  .orders-table td[data-label='სტატუსი'] .order-payment-line { margin: 0; }
+  .orders-table .order-actions-cell { grid-column: 3; align-self: end; }
+  .orders-table .order-manage-btn { height: 40px; padding: 0 14px; }
+  .orders-table tr.order-expand { display: block; }
+  .orders-table tr.order-expand td { display: block; }
   .rail-track { grid-auto-columns: calc((100% - 3 * 16px) / 4); }
 
   .split { grid-template-columns: minmax(0, 1fr) 340px; }
@@ -2060,6 +2331,11 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .user-menu .dropdown { width: min(280px, calc(100vw - 32px)); }
   .user-menu .dropdown-item { min-height: 48px; font-size: 15px; }
   .user-menu .dropdown-item.danger { color: var(--danger); margin-top: 4px; border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
+  /* ენის არჩევა — კომპაქტური: დროშა + კოდი, 44px შეხების არე; მენიუ ეკრანში ეტევა */
+  .lang-trigger { height: 44px; padding: 0 8px; gap: 5px; }
+  .lang-trigger .chev { display: none; }
+  .lang-menu { width: min(220px, calc(100vw - 32px)); }
+  .lang-option { min-height: 48px; font-size: 15px; }
   .nav-mobile-search { display: block; }
   .nav-inner { gap: 12px; }
 
@@ -2168,6 +2444,9 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .dialog { padding: 20px; }
   .dialog-actions { flex-direction: column; margin-top: 20px; }
   .dialog-actions .btn { width: 100%; white-space: normal; height: auto; min-height: 44px; padding: 10px 16px; line-height: 1.25; }
+  /* შეკვეთის მართვა: მობილურზე სრული სიგანე, მთავარი მოქმედება ზემოთ */
+  .order-manage .dialog-actions { flex-direction: column-reverse; flex-wrap: nowrap; }
+  .order-manage .dialog-actions .btn:first-child { flex-grow: 1; }
 
   /* პროფილის ჩანართები — ორივე სრულად ჩანს */
   .profile-tabs .tabs { display: flex; width: 100%; }
@@ -2220,10 +2499,50 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .footer-grid { grid-template-columns: 1fr; gap: 24px; }
   .footer { margin-bottom: 0; }
   .admin-head h1 { font-size: 22px; }
+  .order-expand .inner { padding: 12px 14px 14px; }
+  .order-items li { flex-wrap: wrap; }
+  .status-flow { gap: 2px; }
+  .status-flow li { font-size: 10px; }
+
+  /* admin → orders: compact status counters (3×2) and value cards */
+  .order-count-grid { gap: 8px; }
+  .order-count { padding: 10px; }
+  .order-count-icon { width: 22px; height: 22px; }
+  .order-count-label { font-size: 11px; }
+  .order-count strong { font-size: 20px; }
+  /* ადმინს ქვედა ზოლში 5 პუნქტი აქვს — წარწერები ერთმანეთს არ ეკვრის */
+  .bottom-nav:has(.bn-item:nth-child(5)) .bn-item { font-size: 10px; letter-spacing: -0.01em; min-width: 0; }
+  .bottom-nav:has(.bn-item:nth-child(5)) .bn-item span:not(.count) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .order-value { padding: 14px; }
+  .order-value-head strong { font-size: 22px; }
+  .value-row { flex-wrap: wrap; }
+  .admin-head-actions { width: 100%; }
+  .admin-head-actions .btn { flex: 1; }
   /* admin stats: one compact row instead of three full-width cards */
   .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
   .stat { padding: 10px; gap: 0; }
   .stat-icon { display: none; }
   .stat > div > span { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .stat strong { font-size: 15px; white-space: nowrap; }
+}
+
+/* ვიწრო ტელეფონები: ავტორიზებულის header-ში (ბრენდი + ენა + თემა + ავატარი) ადგილი არ ყოფნის —
+   ენის ღილაკზე მხოლოდ დროშა (კოდი ჩანს მენიუში), შეხების არე 44px რჩება */
+@media (max-width: 380px) {
+  .nav-inner { gap: 8px; }
+  .nav-actions { gap: 2px; }
+  .lang-trigger { width: 44px; padding: 0; justify-content: center; }
+  .lang-trigger .lang-short { display: none; }
+  .brand { gap: 8px; font-size: 19px; }
+  .brand-mark { width: 30px; height: 30px; }
+  .user-trigger { margin-left: 0; }
+}
+
+/* პლანშეტი (721–1000px): ძებნის ველს ადგილი რომ დარჩეს — ენის ღილაკზე დროშა + კოდი, ანგარიშზე მხოლოდ ავატარი
+   (სახელი ჩანს მენიუს სათაურში) */
+@media (min-width: 721px) and (max-width: 1000px) {
+  .lang-trigger { padding: 0 8px; gap: 5px; }
+  .lang-trigger .chev { display: none; }
+  .user-trigger { padding: 0 4px; gap: 4px; }
+  .user-trigger .name { display: none; }
 }

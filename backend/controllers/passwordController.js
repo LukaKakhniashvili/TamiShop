@@ -6,6 +6,7 @@ const { sendPasswordResetEmail } = require('../services/email/emailService');
 const { normalizeEmail, isValidEmail, issueCode, codeStatus, checkCode } = require('../services/verificationCodes');
 const { validatePassword } = require('../utils/passwordPolicy');
 const httpError = require('../utils/httpError');
+const { requestLanguage } = require('../utils/requestLanguage');
 const { generateToken } = require('./authController');
 
 /*
@@ -74,7 +75,7 @@ const sendResetCode = asyncHandler(async (req, res) => {
   if (!user.isActive) throw fieldError(403, 'ეს ანგარიში დეაქტივირებულია.', 'email', 'ACCOUNT_DISABLED');
 
   const timers = await issueCode(PasswordResetCode, email, (code, expiresInMinutes) =>
-    sendPasswordResetEmail({ to: email, code, expiresInMinutes })
+    sendPasswordResetEmail({ to: email, code, expiresInMinutes, lng: requestLanguage(req) })
   );
   res.json({ message: 'აღდგენის კოდი გაიგზავნა', ...timers });
 });
@@ -92,7 +93,7 @@ const resetCodeStatus = asyncHandler(async (req, res) => {
 const verifyResetCode = asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const code = String(req.body.code || '').trim();
-  if (!email || !code) throw httpError(400, 'ელ. ფოსტა და კოდი სავალდებულოა');
+  if (!email || !code) throw httpError(400, 'ელ. ფოსტა და კოდი სავალდებულოა', { code: 'REQUIRED_FIELDS' });
 
   const doc = await checkCode(PasswordResetCode, email, code);
 

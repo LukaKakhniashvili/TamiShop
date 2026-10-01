@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -27,6 +28,7 @@ const useSectionData = (load, deps = [], enabled = true) => {
 };
 
 export const HotDealsSection = ({ onViewAll }) => {
+  const { t } = useTranslation();
   const products = useSectionData(() =>
     api
       .get('/product-list', { params: { minDiscount: DEAL_MIN_DISCOUNT, sort: 'discount_desc', limit: 24 } })
@@ -38,18 +40,18 @@ export const HotDealsSection = ({ onViewAll }) => {
       id="deals"
       variant="deals"
       icon="flame"
-      eyebrow={`${DEAL_MIN_DISCOUNT}%+ ფასდაკლება`}
-      title="ცხელი შეთავაზებები"
-      subtitle="საუკეთესო ფასები — ყველა პროდუქტი მინიმუმ 40%-იანი ფასდაკლებით"
+      eyebrow={t('sections.deals.eyebrow', { percent: DEAL_MIN_DISCOUNT })}
+      title={t('sections.deals.title')}
+      subtitle={t('sections.deals.subtitle', { percent: DEAL_MIN_DISCOUNT })}
       products={products}
       cardProps={() => ({ highlight: true })}
-      action={{ label: 'ყველას ნახვა', onClick: onViewAll }}
+      action={{ label: t('sections.viewAll'), onClick: onViewAll }}
       empty={
         <>
           <Icon name="tag" size={22} />
           <div>
-            <strong>ამ ეტაპზე 40%+ ფასდაკლებები არ არის</strong>
-            <span>ახალი შეთავაზებები მალე დაემატება — თვალი ადევნეთ!</span>
+            <strong>{t('sections.deals.emptyTitle', { percent: DEAL_MIN_DISCOUNT })}</strong>
+            <span>{t('sections.deals.emptyText')}</span>
           </div>
         </>
       }
@@ -58,6 +60,7 @@ export const HotDealsSection = ({ onViewAll }) => {
 };
 
 export const BestSellersSection = () => {
+  const { t } = useTranslation();
   const products = useSectionData(() =>
     api.get('/product-best-sellers', { params: { limit: SECTION_SIZE } }).then(({ data }) => data)
   );
@@ -66,8 +69,8 @@ export const BestSellersSection = () => {
     <ProductRail
       id="best-sellers"
       icon="trophy"
-      title="ბესტსელერები"
-      subtitle="ყველაზე გაყიდვადი და პოპულარული პროდუქტები"
+      title={t('sections.bestSellers.title')}
+      subtitle={t('sections.bestSellers.subtitle')}
       products={products}
       cardProps={(p, i) => ({ rank: i < 3 ? i + 1 : undefined })}
     />
@@ -76,6 +79,7 @@ export const BestSellersSection = () => {
 
 // "ახალი" წესი (ბოლო 14 დღე) განსაზღვრულია სერვერზე — იგივე, რაც ბარათის "ახალი" ბეჯისთვის
 export const NewArrivalsSection = ({ onViewAll }) => {
+  const { t } = useTranslation();
   const products = useSectionData(() =>
     api
       .get('/product-list', { params: { newOnly: true, sort: 'newest', limit: SECTION_SIZE } })
@@ -86,16 +90,16 @@ export const NewArrivalsSection = ({ onViewAll }) => {
     <ProductRail
       id="new-arrivals"
       icon="sparkle"
-      title="ახალი პროდუქტები"
-      subtitle="ბოლო 14 დღეში დამატებული პროდუქტები"
+      title={t('sections.newArrivals.title')}
+      subtitle={t('sections.newArrivals.subtitle')}
       products={products}
-      action={{ label: 'ყველას ნახვა', onClick: onViewAll }}
+      action={{ label: t('sections.viewAll'), onClick: onViewAll }}
       empty={
         <>
           <Icon name="sparkle" size={22} />
           <div>
-            <strong>ბოლო 14 დღეში ახალი პროდუქტი არ დამატებულა</strong>
-            <span>ახალი პროდუქტები აქ ავტომატურად გამოჩნდება</span>
+            <strong>{t('sections.newArrivals.emptyTitle')}</strong>
+            <span>{t('sections.newArrivals.emptyText')}</span>
           </div>
         </>
       }
@@ -104,6 +108,7 @@ export const NewArrivalsSection = ({ onViewAll }) => {
 };
 
 export const RecommendedSection = () => {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const { items } = useCart();
   // კალათის ცვლილებაზე სექცია თავიდან არ იტვირთება — ვიყენებთ უახლეს მდგომარეობას ჩატვირთვის მომენტში
@@ -130,16 +135,13 @@ export const RecommendedSection = () => {
     !authLoading
   );
 
+  const personalized = strategy === 'personalized';
   return (
     <ProductRail
       id="recommended"
       icon="heart"
-      title={strategy === 'personalized' ? 'რეკომენდებული თქვენთვის' : 'რეკომენდებული პროდუქტები'}
-      subtitle={
-        strategy === 'personalized'
-          ? 'შერჩეულია თქვენი დათვალიერებების, კალათისა და შენაძენების მიხედვით'
-          : 'პოპულარული და მაღალი შეფასების მქონე პროდუქტები'
-      }
+      title={personalized ? t('sections.recommended.titlePersonal') : t('sections.recommended.title')}
+      subtitle={personalized ? t('sections.recommended.subtitlePersonal') : t('sections.recommended.subtitle')}
       products={products}
     />
   );

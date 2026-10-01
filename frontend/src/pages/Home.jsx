@@ -9,12 +9,14 @@ import {
 } from '../components/home/HomeSections';
 import { CATALOG_PARAMS } from './Catalog';
 import Icon from '../components/Icon';
+import { useTranslation } from 'react-i18next';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
+// მხოლოდ რეალურად მოქმედი უპირატესობები (მიწოდება და გადახდა — backend/constants/checkout.js)
 const perks = [
-  // მხოლოდ რეალურად მოქმედი უპირატესობები (მიწოდება და გადახდა — backend/constants/checkout.js)
-  { icon: 'truck', title: 'უფასო მიწოდება', text: 'მთელ საქართველოში, ნებისმიერ შეკვეთაზე' },
-  { icon: 'box', title: 'მიწოდება 2–6 სამუშაო დღეში', text: 'საქართველოს ყველა რეგიონში' },
-  { icon: 'receipt', title: 'გადახდა მიღებისას', text: 'გადაიხდით კურიერთან' },
+  { icon: 'truck', key: 'freeDelivery' },
+  { icon: 'box', key: 'deliveryTime' },
+  { icon: 'receipt', key: 'payOnDelivery' },
 ];
 
 const scrollToId = (id) => {
@@ -31,8 +33,10 @@ const scrollToId = (id) => {
  * სრული სია (ძიება, ფილტრები, სორტირება, გვერდები) ცალკე გვერდზეა — /products.
  */
 const Home = () => {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  useDocumentMeta(t('meta.homeTitle'), t('meta.homeDescription'));
 
   // ძველი ბმულები (/?search=...&page=2) — კატალოგზე გადამისამართება, რომ არ გაფუჭდეს
   if (CATALOG_PARAMS.some((key) => params.has(key))) {
@@ -46,7 +50,7 @@ const Home = () => {
       <ShopHub />
 
       <div className="discover-head">
-        <span>აღმოაჩინე</span>
+        <span>{t('home.discover')}</span>
       </div>
       <div className="home-sections">
         <HotDealsSection onViewAll={() => navigate('/products?deals=1&sort=discount_desc')} />
@@ -57,23 +61,23 @@ const Home = () => {
 
       <section className="catalog-cta">
         <div>
-          <h2>ვერ იპოვე სასურველი?</h2>
-          <p>დაათვალიერე სრული კატალოგი — ძიებით, ფილტრებითა და სორტირებით.</p>
+          <h2>{t('home.ctaTitle')}</h2>
+          <p>{t('home.ctaText')}</p>
         </div>
         <Link to="/products" className="btn btn-lg hero-cta">
-          სრული კატალოგი <Icon name="arrowRight" size={18} />
+          {t('home.ctaButton')} <Icon name="arrowRight" size={18} />
         </Link>
       </section>
 
       <div className="perks">
         {perks.map((p) => (
-          <div key={p.title} className="card perk">
+          <div key={p.key} className="card perk">
             <span className="perk-icon">
               <Icon name={p.icon} size={20} />
             </span>
             <div>
-              <strong>{p.title}</strong>
-              <span>{p.text}</span>
+              <strong>{t(`home.perks.${p.key}.title`)}</strong>
+              <span>{t(`home.perks.${p.key}.text`)}</span>
             </div>
           </div>
         ))}

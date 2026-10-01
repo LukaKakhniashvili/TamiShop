@@ -4,19 +4,12 @@ const mongoose = require('mongoose');
 const connectDB = require('../config/db');
 const User = require('../models/User');
 
-const email = process.argv[2];
-
-if (!email) {
-  console.error('გთხოვთ მიუთითოთ ემეილი: node utils/makeAdmin.js user@example.com');
-  process.exit(1);
-}
-
-const run = async () => {
+const run = async (email) => {
   await connectDB();
   const user = await User.findOneAndUpdate({ email }, { role: 'admin' }, { new: true });
 
   if (!user) {
-    console.error(`მომხმარებელი ვერ მოიძებნა: ${email}. ჯერ ერთხელ შედით საიტზე Google-ით.`);
+    console.error(`მომხმარებელი ვერ მოიძებნა: ${email}. ჯერ ერთხელ შედით საიტზე.`);
   } else {
     console.log(`მომხმარებელი ${email} გახდა admin.`);
   }
@@ -25,4 +18,12 @@ const run = async () => {
   process.exit(0);
 };
 
-run();
+// მხოლოდ პირდაპირ გაშვებისას (node utils/...) — require()-ით ჩატვირთვა ბაზას არ ეხება
+if (require.main === module) {
+  const email = process.argv[2];
+  if (!email) {
+    console.error('გთხოვთ მიუთითოთ ემეილი: node utils/makeAdmin.js user@example.com');
+    process.exit(1);
+  }
+  run(email);
+}

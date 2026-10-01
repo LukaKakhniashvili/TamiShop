@@ -1,37 +1,44 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useConfirm, useToast } from '../context/UIContext';
+import { useLocalized } from '../i18n/content';
+import { apiErrorMessage } from '../i18n/errors';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 import Icon from '../components/Icon';
 import { Alert, EmptyState, Field, Loader, formatPrice } from '../components/ui';
-import CitySelect from '../components/checkout/CitySelect';
+import CitySelect, { cityLabel } from '../components/checkout/CitySelect';
 import OrderConfirmation from '../components/checkout/OrderConfirmation';
 import PaymentModal from '../components/checkout/PaymentModal';
+import LineOptions from '../components/LineOptions';
 
 const DELIVERY_FIELDS = ['firstName', 'lastName', 'phone', 'city', 'street'];
 
-// კლიენტის ვალიდაცია — იგივე წესები, რასაც სერვერი ამოწმებს (backend/controllers/orderController.js)
+// კლიენტის ვალიდაცია — იგივე წესები, რასაც სერვერი ამოწმებს (backend/controllers/orderController.js).
+// აბრუნებს თარგმანის გასაღებებს (ტექსტი — t()-ით, ენის შეცვლისას შეცდომაც ითარგმნება)
 const validateDelivery = (form, cityNames) => {
   const e = {};
-  if (!form.firstName.trim()) e.firstName = 'შეიყვანეთ სახელი';
-  if (!form.lastName.trim()) e.lastName = 'შეიყვანეთ გვარი';
-  if (!/^[+\d][\d\s-]{7,}$/.test(form.phone.trim())) e.phone = 'შეიყვანეთ სწორი ტელეფონის ნომერი';
-  if (!cityNames.has(form.city)) e.city = 'აირჩიეთ ქალაქი';
-  if (form.street.trim().length < 5) e.street = 'მიუთითეთ სრული მისამართი (ქუჩა, სახლი, ბინა)';
+  if (!form.firstName.trim()) e.firstName = 'checkout.errors.firstName';
+  if (!form.lastName.trim()) e.lastName = 'checkout.errors.lastName';
+  if (!/^[+\d][\d\s-]{7,}$/.test(form.phone.trim())) e.phone = 'checkout.errors.phone';
+  if (!cityNames.has(form.city)) e.city = 'checkout.errors.city';
+  if (form.street.trim().length < 5) e.street = 'checkout.errors.street';
   return e;
 };
 
 const Steps = ({ step }) => {
+  const { t } = useTranslation();
   const steps = [
-    { id: 'delivery', label: 'მიწოდება' },
-    { id: 'payment', label: 'გადახდა' },
-    { id: 'done', label: 'დადასტურება' },
+    { id: 'delivery', label: t('checkout.steps.delivery') },
+    { id: 'payment', label: t('checkout.steps.payment') },
+    { id: 'done', label: t('checkout.steps.done') },
   ];
   const current = steps.findIndex((s) => s.id === step);
   return (
-    <div className="steps checkout-steps" aria-label="შეკვეთის ეტაპები">
+    <div className="steps checkout-steps" aria-label={t('checkout.steps.label')}>
       {steps.map((s, i) => (
         <div key={s.id} style={{ display: 'contents' }}>
           {i > 0 && <div className={`line ${i <= current ? 'done' : ''}`} />}
@@ -45,39 +52,57 @@ const Steps = ({ step }) => {
   );
 };
 
-const DeliveryInfo = ({ method }) =>
-  method ? (
+// მიწოდების მეთოდის ტექსტები — id-ით თარგმანებიდან (სერვერის ქართული ტექსტი — fallback)
+export const useDeliveryText = () => {
+  const { t } = useTranslation();
+  return (method) =>
+    method
+      ? {
+          label: t(`checkout.deliveryMethods.${method.id}`, { defaultValue: method.label }),
+          estimate: t('checkout.deliveryEstimate', { min: method.minDays, max: method.maxDays }),
+          coverage: t('checkout.deliveryCoverage'),
+        }
+      : { label: '', estimate: '', coverage: '' };
+};
+
+const DeliveryInfo = ({ method }) => {
+  const { t } = useTranslation();
+  const text = useDeliveryText()(method);
+  return method ? (
     <div className="delivery-info">
       <div className="delivery-info-head">
         <span className="delivery-info-icon">
           <Icon name="truck" size={22} />
         </span>
         <div>
-          <strong>მიწოდება უფასოა მთელ საქართველოში</strong>
-          <span>{method.label} · {method.estimate}</span>
+          <strong>{t('checkout.freeDeliveryEverywhere')}</strong>
+          <span>
+            {text.label} · {text.estimate}
+          </span>
         </div>
-        <span className="pill pill-success no-dot">უფასო</span>
+        <span className="pill pill-success no-dot">{t('common.free')}</span>
       </div>
       <dl className="delivery-info-grid">
         <div>
-          <dt>მიწოდების ტიპი</dt>
-          <dd>სტანდარტული</dd>
+          <dt>{t('checkout.deliveryType')}</dt>
+          <dd>{t('checkout.standard')}</dd>
         </div>
         <div>
-          <dt>ღირებულება</dt>
-          <dd className="free">{method.cost > 0 ? formatPrice(method.cost) : 'უფასო'}</dd>
+          <dt>{t('checkout.cost')}</dt>
+          <dd className="free">{method.cost > 0 ? formatPrice(method.cost) : t('common.free')}</dd>
         </div>
         <div>
-          <dt>სავარაუდო ვადა</dt>
-          <dd>{method.estimate}</dd>
+          <dt>{t('checkout.estimatedTime')}</dt>
+          <dd>{text.estimate}</dd>
         </div>
         <div>
-          <dt>დაფარვა</dt>
-          <dd>{method.coverage}</dd>
+          <dt>{t('checkout.coverage')}</dt>
+          <dd>{text.coverage}</dd>
         </div>
       </dl>
     </div>
   ) : null;
+};
 
 const PAYMENT_ICONS = { card: 'card', cod: 'truck' };
 
@@ -86,11 +111,15 @@ const PAYMENT_ICONS = { card: 'card', cod: 'truck' };
 const isMethodAvailable = (m) => (m.id === 'card' ? m.enabled === true : m.enabled !== false);
 
 const Checkout = () => {
+  const { t } = useTranslation();
+  const L = useLocalized();
+  const deliveryText = useDeliveryText();
   const { items, totalPrice, totalItems, clearCart, removeFromCart } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const confirm = useConfirm();
   const toast = useToast();
+  useDocumentMeta(t('checkout.title'));
 
   const [options, setOptions] = useState(null);
   const [optionsError, setOptionsError] = useState(false);
@@ -105,7 +134,7 @@ const Checkout = () => {
   });
   const [paymentMethod, setPaymentMethod] = useState('');
   const [bankId, setBankId] = useState('');
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({}); // field → თარგმანის გასაღები
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
   const [placedOrder, setPlacedOrder] = useState(null);
@@ -122,7 +151,9 @@ const Checkout = () => {
 
   const cityNames = useMemo(() => new Set((options?.cities || []).map((c) => c.name)), [options]);
   const delivery = options?.deliveryMethods.find((d) => d.id === options.defaultDeliveryMethod);
-  const paymentLabel = options?.paymentMethods.find((p) => p.id === paymentMethod)?.label;
+  const dText = deliveryText(delivery);
+  const paymentLabel = (id) => t(`checkout.paymentMethods.${id}.label`);
+  const bankName = (b) => t(`checkout.banks.${b.id}`, { defaultValue: b.name });
 
   // შენახული ქალაქი, რომელიც სიაში არ არის (ძველი ხელით შეყვანილი), ცარიელდება
   useEffect(() => {
@@ -161,7 +192,8 @@ const Checkout = () => {
   const selectedBank = options?.banks?.find((b) => b.id === bankId && b.mode);
 
   const orderPayload = () => ({
-    items: items.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+    // ფასი არ იგზავნება — სერვერი ფასს პროდუქტიდან/ვარიანტიდან ითვლის
+    items: items.map((i) => ({ productId: i.productId, ...(i.variantId ? { variantId: i.variantId } : {}), quantity: i.quantity })),
     customerInfo: {
       firstName: form.firstName,
       lastName: form.lastName,
@@ -211,11 +243,11 @@ const Checkout = () => {
 
   // პროდუქტის ამოღება შეჯამებიდან — კალათის არსებული ლოგიკით (removeFromCart), ანიმაციით
   const [removingId, setRemovingId] = useState(null);
-  const removeItem = (productId) => {
+  const removeItem = (lineId) => {
     if (submitting || paymentOpen || removingId) return;
-    setRemovingId(productId);
+    setRemovingId(lineId);
     setTimeout(() => {
-      removeFromCart(productId);
+      removeFromCart(lineId);
       setRemovingId(null);
     }, 250);
   };
@@ -223,10 +255,10 @@ const Checkout = () => {
   const [cancelling, setCancelling] = useState(false);
   const cancelOrder = async () => {
     const ok = await confirm({
-      title: 'შეკვეთის გაუქმება?',
-      message: 'ნამდვილად გსურთ ამ შეკვეთის გაუქმება? მიმდინარე შეკვეთიდან ყველა პროდუქტი წაიშლება.',
-      confirmText: 'დიახ, გაუქმება',
-      cancelText: 'შეკვეთის შენარჩუნება',
+      title: t('checkout.cancelDialog.title'),
+      message: t('checkout.cancelDialog.message'),
+      confirmText: t('checkout.cancelDialog.confirm'),
+      cancelText: t('checkout.cancelDialog.keep'),
     });
     if (!ok) return;
 
@@ -238,16 +270,16 @@ const Checkout = () => {
       if (err.response?.status === 409 && err.response.data?.status === 'paid') {
         // გადახდა უკვე დასრულდა — გაუქმება აღარ შეიძლება
         completeOrder(err.response.data.order);
-        toast({ type: 'info', title: 'შეკვეთა უკვე გადახდილია', description: 'გაუქმება შეუძლებელია' });
+        toast({ type: 'info', title: t('checkout.toasts.alreadyPaid'), description: t('checkout.toasts.cannotCancel') });
       } else {
-        toast({ type: 'error', title: 'გაუქმება ვერ მოხერხდა', description: 'სცადეთ თავიდან' });
+        toast({ type: 'error', title: t('checkout.toasts.cancelFailed'), description: t('common.tryAgain') });
       }
       return;
     }
     setPendingOrder(null);
     navigate('/products', { replace: true });
     clearCart();
-    toast({ type: 'info', title: 'შეკვეთა გაუქმდა', description: 'კალათა გასუფთავდა' });
+    toast({ type: 'info', title: t('checkout.toasts.cancelled'), description: t('checkout.toasts.cartCleared') });
   };
 
   const placeOrder = async (e) => {
@@ -255,11 +287,11 @@ const Checkout = () => {
     setServerError('');
 
     if (!paymentMethod) {
-      setErrors((x) => ({ ...x, paymentMethod: 'აირჩიეთ გადახდის მეთოდი' }));
+      setErrors((x) => ({ ...x, paymentMethod: 'checkout.errors.paymentMethod' }));
       return;
     }
     if (paymentMethod === 'card' && !selectedBank) {
-      setErrors((x) => ({ ...x, bank: 'აირჩიეთ ბანკი' }));
+      setErrors((x) => ({ ...x, bank: 'checkout.errors.bank' }));
       return;
     }
 
@@ -281,14 +313,16 @@ const Checkout = () => {
       }
     } catch (err) {
       const fields = err.response?.data?.fields || {};
-      const message = err.response?.data?.message || 'შეკვეთის გაფორმება ვერ მოხერხდა';
+      const fieldKeys = Object.fromEntries(Object.keys(fields).map((f) => [f, `checkout.errors.${f}`]));
       if (DELIVERY_FIELDS.some((f) => fields[f])) {
-        setErrors(fields);
+        setErrors(fieldKeys);
         setStep('delivery');
       } else if (fields.bank) {
-        setErrors((x) => ({ ...x, bank: fields.bank }));
+        setErrors((x) => ({ ...x, bank: 'checkout.errors.bank' }));
+      } else if (Object.keys(fields).length) {
+        setServerError(t(`checkout.errors.${Object.keys(fields)[0]}`, { defaultValue: t('checkout.errors.orderFailed') }));
       } else {
-        setServerError(message);
+        setServerError(apiErrorMessage(err, 'checkout.errors.orderFailed'));
       }
     } finally {
       setSubmitting(false);
@@ -301,11 +335,7 @@ const Checkout = () => {
         <div className="confirmation-steps">
           <Steps step="done" />
         </div>
-        <OrderConfirmation
-          order={placedOrder}
-          paymentMethods={options?.paymentMethods || []}
-          banks={options?.banks || []}
-        />
+        <OrderConfirmation order={placedOrder} banks={options?.banks || []} cities={options?.cities || []} />
       </div>
     );
   }
@@ -314,13 +344,9 @@ const Checkout = () => {
   if (items.length === 0) {
     return (
       <div className="container page">
-        <EmptyState
-          icon="cart"
-          title="შეკვეთაში პროდუქტები აღარ არის"
-          text="შეკვეთის გასაფორმებლად დაამატეთ პროდუქტები კალათაში."
-        >
+        <EmptyState icon="cart" title={t('checkout.emptyTitle')} text={t('checkout.emptyText')}>
           <Link to="/products" className="btn btn-primary">
-            ყიდვის გაგრძელება <Icon name="arrowRight" size={18} />
+            {t('cart.continueShopping')} <Icon name="arrowRight" size={18} />
           </Link>
         </EmptyState>
       </div>
@@ -330,11 +356,7 @@ const Checkout = () => {
   if (!options) {
     return (
       <div className="container page">
-        {optionsError ? (
-          <EmptyState icon="alert" title="ვერ ჩაიტვირთა" text="შეკვეთის გაფორმების გვერდი ვერ ჩაიტვირთა. სცადეთ გვერდის განახლება." />
-        ) : (
-          <Loader />
-        )}
+        {optionsError ? <EmptyState icon="alert" title={t('catalog.loadErrorTitle')} text={t('checkout.loadError')} /> : <Loader />}
       </div>
     );
   }
@@ -347,16 +369,18 @@ const Checkout = () => {
     className: `input ${errors[name] ? 'is-invalid' : ''}`,
     'aria-invalid': errors[name] ? true : undefined,
   });
+  const fieldError = (name) => errors[name] && <span className="field-error">{t(errors[name])}</span>;
+  const city = cityLabel(options.cities, form.city);
 
   return (
     <div className="container page">
-      <nav className="breadcrumb" aria-label="breadcrumb">
-        <Link to="/cart">კალათა</Link>
+      <nav className="breadcrumb" aria-label={t('common.breadcrumb')}>
+        <Link to="/cart">{t('nav.cart')}</Link>
         <Icon name="chevronRight" size={14} />
-        <span className="current">გაფორმება</span>
+        <span className="current">{t('checkout.breadcrumb')}</span>
       </nav>
       <div className="page-header">
-        <h1 className="page-title">შეკვეთის გაფორმება</h1>
+        <h1 className="page-title">{t('checkout.title')}</h1>
         <Steps step={step} />
       </div>
 
@@ -365,16 +389,16 @@ const Checkout = () => {
           <form className="form-stack checkout-step" onSubmit={goToPayment} noValidate>
             <section className="card card-pad">
               <h2 className="card-title">
-                <span className="num">1</span> მიმღები
+                <span className="num">1</span> {t('checkout.recipient')}
               </h2>
               <div className="form-grid">
-                <Field label="სახელი" required hint={errors.firstName && <span className="field-error">{errors.firstName}</span>}>
+                <Field label={t('checkout.firstName')} required hint={fieldError('firstName')}>
                   <input {...fieldProps('firstName')} autoComplete="given-name" />
                 </Field>
-                <Field label="გვარი" required hint={errors.lastName && <span className="field-error">{errors.lastName}</span>}>
+                <Field label={t('checkout.lastName')} required hint={fieldError('lastName')}>
                   <input {...fieldProps('lastName')} autoComplete="family-name" />
                 </Field>
-                <Field label="ტელეფონის ნომერი" required className="span-2" hint={errors.phone && <span className="field-error">{errors.phone}</span>}>
+                <Field label={t('checkout.phone')} required className="span-2" hint={fieldError('phone')}>
                   <input {...fieldProps('phone')} type="tel" autoComplete="tel" placeholder="5XX XX XX XX" />
                 </Field>
               </div>
@@ -382,12 +406,13 @@ const Checkout = () => {
 
             <section className="card card-pad">
               <h2 className="card-title">
-                <span className="num">2</span> მიწოდების მისამართი
+                <span className="num">2</span> {t('checkout.address')}
               </h2>
               <div className="form-grid">
                 <div className="field">
                   <label className="field-label" htmlFor="f-city">
-                    ქალაქი<span className="req">*</span>
+                    {t('checkout.city')}
+                    <span className="req">*</span>
                   </label>
                   <CitySelect
                     id="f-city"
@@ -396,31 +421,31 @@ const Checkout = () => {
                     onChange={(v) => setField('city', v)}
                     invalid={Boolean(errors.city)}
                   />
-                  {errors.city && <span className="field-hint field-error">{errors.city}</span>}
+                  {errors.city && <span className="field-hint field-error">{t(errors.city)}</span>}
                 </div>
-                <Field label="საფოსტო ინდექსი">
-                  <input {...fieldProps('postalCode')} autoComplete="postal-code" placeholder="არასავალდებულო" />
+                <Field label={t('checkout.postalCode')}>
+                  <input {...fieldProps('postalCode')} autoComplete="postal-code" placeholder={t('checkout.optional')} />
                 </Field>
                 <Field
-                  label="მისამართი"
+                  label={t('checkout.street')}
                   required
                   className="span-2"
-                  hint={errors.street ? <span className="field-error">{errors.street}</span> : 'ქუჩა, სახლის ნომერი, ბინა, სადარბაზო, სართული'}
+                  hint={errors.street ? fieldError('street') : t('checkout.streetHint')}
                 >
-                  <input {...fieldProps('street')} autoComplete="street-address" placeholder="მაგ. რუსთაველის გამზ. 25, ბინა 12" />
+                  <input {...fieldProps('street')} autoComplete="street-address" placeholder={t('checkout.streetPlaceholder')} />
                 </Field>
               </div>
             </section>
 
             <section className="card card-pad">
               <h2 className="card-title">
-                <span className="num">3</span> მიწოდება
+                <span className="num">3</span> {t('checkout.delivery')}
               </h2>
               <DeliveryInfo method={delivery} />
             </section>
 
             <button className="btn btn-primary btn-lg checkout-next" type="submit">
-              გაგრძელება გადახდაზე <Icon name="arrowRight" size={18} />
+              {t('checkout.continueToPayment')} <Icon name="arrowRight" size={18} />
             </button>
           </form>
         ) : (
@@ -433,75 +458,83 @@ const Checkout = () => {
                     {form.firstName} {form.lastName} · {form.phone}
                   </strong>
                   <span>
-                    {form.city}, {form.street}
+                    {city}, {form.street}
                     {form.postalCode ? `, ${form.postalCode}` : ''}
                   </span>
                 </div>
                 <button type="button" className="link" onClick={() => setStep('delivery')}>
-                  შეცვლა
+                  {t('common.change')}
                 </button>
               </div>
               <div className="review-row">
                 <Icon name="truck" size={20} />
                 <div>
-                  <strong>{delivery?.label} · უფასო</strong>
-                  <span>{delivery?.estimate} · {delivery?.coverage}</span>
+                  <strong>
+                    {dText.label} · {t('common.free')}
+                  </strong>
+                  <span>
+                    {dText.estimate} · {dText.coverage}
+                  </span>
                 </div>
               </div>
             </section>
 
             <section className="card card-pad">
               <h2 className="card-title">
-                <span className="num">4</span> გადახდის მეთოდი
+                <span className="num">4</span> {t('checkout.paymentMethod')}
               </h2>
-              <div className="pay-methods" role="radiogroup" aria-label="გადახდის მეთოდი" aria-invalid={errors.paymentMethod ? true : undefined}>
+              <div className="pay-methods" role="radiogroup" aria-label={t('checkout.paymentMethod')} aria-invalid={errors.paymentMethod ? true : undefined}>
                 {options.paymentMethods.map((m) => {
                   const unavailable = !isMethodAvailable(m);
                   return (
-                  <label
-                    key={m.id}
-                    className={`pay-method ${paymentMethod === m.id ? 'selected' : ''} ${errors.paymentMethod && !unavailable ? 'is-invalid' : ''} ${unavailable ? 'unavailable' : ''}`}
-                    title={unavailable ? 'ბარათით გადახდა მალე იქნება ხელმისაწვდომი' : undefined}
-                  >
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value={m.id}
-                      checked={paymentMethod === m.id}
-                      disabled={unavailable}
-                      aria-describedby={unavailable ? `pm-${m.id}-soon` : undefined}
-                      onChange={() => {
-                        setPaymentMethod(m.id);
-                        // კურიერთან გადახდაზე გადასვლისას ბანკის არჩევანი უქმდება
-                        if (m.id !== 'card') setBankId('');
-                        setErrors((x) => ({ ...x, paymentMethod: undefined, bank: undefined }));
-                        setServerError('');
-                      }}
-                    />
-                    <span className="pay-radio" />
-                    <span className="pay-method-icon">
-                      <Icon name={PAYMENT_ICONS[m.id] || 'card'} size={22} />
-                    </span>
-                    <span className="pay-method-text">
-                      <strong>{m.label}</strong>
-                      <small id={`pm-${m.id}-soon`}>
-                        {unavailable ? 'მალე იქნება ხელმისაწვდომი' : m.description}
-                      </small>
-                    </span>
-                    {unavailable && <span className="pill pill-neutral no-dot soon-badge">მალე</span>}
-                  </label>
+                    <label
+                      key={m.id}
+                      className={`pay-method ${paymentMethod === m.id ? 'selected' : ''} ${errors.paymentMethod && !unavailable ? 'is-invalid' : ''} ${unavailable ? 'unavailable' : ''}`}
+                      title={unavailable ? t('checkout.cardComingSoonHint') : undefined}
+                    >
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value={m.id}
+                        checked={paymentMethod === m.id}
+                        disabled={unavailable}
+                        aria-describedby={unavailable ? `pm-${m.id}-soon` : undefined}
+                        onChange={() => {
+                          setPaymentMethod(m.id);
+                          // კურიერთან გადახდაზე გადასვლისას ბანკის არჩევანი უქმდება
+                          if (m.id !== 'card') setBankId('');
+                          setErrors((x) => ({ ...x, paymentMethod: undefined, bank: undefined }));
+                          setServerError('');
+                        }}
+                      />
+                      <span className="pay-radio" />
+                      <span className="pay-method-icon">
+                        <Icon name={PAYMENT_ICONS[m.id] || 'card'} size={22} />
+                      </span>
+                      <span className="pay-method-text">
+                        <strong>{paymentLabel(m.id)}</strong>
+                        <small id={`pm-${m.id}-soon`}>
+                          {unavailable ? t('checkout.availableSoon') : t(`checkout.paymentMethods.${m.id}.description`)}
+                        </small>
+                      </span>
+                      {unavailable && <span className="pill pill-neutral no-dot soon-badge">{t('checkout.soon')}</span>}
+                    </label>
                   );
                 })}
               </div>
-              {errors.paymentMethod && <p className="field-error" style={{ marginTop: 10 }}>{errors.paymentMethod}</p>}
+              {errors.paymentMethod && (
+                <p className="field-error" style={{ marginTop: 10 }}>
+                  {t(errors.paymentMethod)}
+                </p>
+              )}
 
               {paymentMethod === 'card' && (
                 <div className="bank-select">
                   <div className="bank-select-head">
-                    <strong>აირჩიეთ ბანკი</strong>
-                    <span>ბარათის მონაცემებს შეიყვანთ ბანკის დაცულ გვერდზე</span>
+                    <strong>{t('checkout.chooseBank')}</strong>
+                    <span>{t('checkout.bankHint')}</span>
                   </div>
-                  <div className="bank-options" role="radiogroup" aria-label="ბანკი">
+                  <div className="bank-options" role="radiogroup" aria-label={t('checkout.bank')}>
                     {(options.banks || []).map((b) => {
                       const unavailable = !b.mode;
                       return (
@@ -524,27 +557,25 @@ const Checkout = () => {
                           <span className="pay-radio" />
                           <span className={`bank-mark bank-${b.id.toLowerCase()}`}>{b.short}</span>
                           <span className="pay-method-text">
-                            <strong>{b.name}</strong>
+                            <strong>{bankName(b)}</strong>
                             <small>
                               {b.latin}
-                              {unavailable ? ' · დროებით მიუწვდომელია' : ''}
+                              {unavailable ? ` · ${t('checkout.temporarilyUnavailable')}` : ''}
                             </small>
                           </span>
-                          {b.mode === 'sandbox' && <span className="pill pill-warning no-dot bank-test">ტესტი</span>}
+                          {b.mode === 'sandbox' && <span className="pill pill-warning no-dot bank-test">{t('checkout.test')}</span>}
                         </label>
                       );
                     })}
                   </div>
-                  {errors.bank && <p className="field-error">{errors.bank}</p>}
+                  {errors.bank && <p className="field-error">{t(errors.bank)}</p>}
                 </div>
               )}
 
               {paymentMethod === 'cod' && (
                 <div className="cod-note">
                   <Icon name="info" size={18} />
-                  <span>
-                    გადაიხდით კურიერთან, შეკვეთის მიღებისას. ბარათის მონაცემები საჭირო არ არის.
-                  </span>
+                  <span>{t('checkout.codNote')}</span>
                 </div>
               )}
             </section>
@@ -553,25 +584,25 @@ const Checkout = () => {
 
             <div className="checkout-actions">
               <button type="button" className="btn btn-lg" onClick={() => setStep('delivery')} disabled={submitting}>
-                <Icon name="arrowLeft" size={18} /> უკან
+                <Icon name="arrowLeft" size={18} /> {t('common.back')}
               </button>
               <button
                 className="btn btn-primary btn-lg"
                 type="submit"
                 disabled={submitting || (paymentMethod === 'card' && !selectedBank)}
-                title={paymentMethod === 'card' && !selectedBank ? 'ჯერ აირჩიეთ ბანკი' : undefined}
+                title={paymentMethod === 'card' && !selectedBank ? t('checkout.chooseBankFirst') : undefined}
               >
                 {submitting ? (
                   <>
-                    <span className="spinner" /> {paymentMethod === 'card' ? 'მზადდება გადახდა...' : 'იგზავნება...'}
+                    <span className="spinner" /> {paymentMethod === 'card' ? t('checkout.preparingPayment') : t('common.sending')}
                   </>
                 ) : paymentMethod === 'card' ? (
                   <>
-                    <Icon name="lock" size={18} /> გადახდა · {formatPrice(payableTotal)}
+                    <Icon name="lock" size={18} /> {t('checkout.payAmount', { amount: formatPrice(payableTotal) })}
                   </>
                 ) : (
                   <>
-                    <Icon name="check" size={18} /> შეკვეთის დადასტურება
+                    <Icon name="check" size={18} /> {t('checkout.confirmOrder')}
                   </>
                 )}
               </button>
@@ -580,93 +611,92 @@ const Checkout = () => {
         )}
 
         <aside className="card card-pad summary">
-          <h2 className="card-title">შეკვეთის შეჯამება</h2>
+          <h2 className="card-title">{t('cart.summary')}</h2>
           <div className="mini-items">
-            {items.map((i) => (
-              <div className={`mini-item removable ${removingId === i.productId ? 'removing' : ''}`} key={i.productId}>
-                <div className="img">
-                  <img src={i.image || 'https://placehold.co/60x60'} alt="" />
-                  <span className="qty">{i.quantity}</span>
+            {items.map((i) => {
+              const name = L(i, 'name');
+              return (
+                <div className={`mini-item removable ${removingId === i.lineId ? 'removing' : ''}`} key={i.lineId}>
+                  <div className="img">
+                    <img src={i.image || 'https://placehold.co/60x60'} alt="" />
+                    <span className="qty">{i.quantity}</span>
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <span className="name">{name}</span>
+                    <LineOptions options={i.options} />
+                    <span className="unit">
+                      {i.quantity} × {formatPrice(i.price)}
+                      {i.oldPrice && <s>{formatPrice(i.oldPrice)}</s>}
+                    </span>
+                  </div>
+                  <strong>{formatPrice(i.price * i.quantity)}</strong>
+                  <button
+                    type="button"
+                    className="mini-remove"
+                    onClick={() => removeItem(i.lineId)}
+                    disabled={submitting || cancelling || Boolean(removingId)}
+                    aria-label={t('checkout.removeItem', { name })}
+                    title={t('checkout.remove')}
+                  >
+                    <Icon name="trash" size={15} />
+                  </button>
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <span className="name">{i.name}</span>
-                  <span className="unit">
-                    {i.quantity} × {formatPrice(i.price)}
-                    {i.oldPrice && <s>{formatPrice(i.oldPrice)}</s>}
-                  </span>
-                </div>
-                <strong>{formatPrice(i.price * i.quantity)}</strong>
-                <button
-                  type="button"
-                  className="mini-remove"
-                  onClick={() => removeItem(i.productId)}
-                  disabled={submitting || cancelling || Boolean(removingId)}
-                  aria-label={`${i.name} — შეკვეთიდან ამოღება`}
-                  title="ამოღება"
-                >
-                  <Icon name="trash" size={15} />
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="summary-row">
-            <span>ნივთები ({totalItems})</span>
+            <span>{t('cart.items', { count: totalItems })}</span>
             <strong>{formatPrice(originalTotal)}</strong>
           </div>
           {discountTotal > 0 && (
             <div className="summary-row discount">
-              <span>ფასდაკლება</span>
+              <span>{t('checkout.discount')}</span>
               <strong>−{formatPrice(discountTotal)}</strong>
             </div>
           )}
           <div className="summary-row">
-            <span>მიწოდება</span>
-            <strong className="free">{deliveryCost > 0 ? formatPrice(deliveryCost) : 'უფასო'}</strong>
+            <span>{t('cart.delivery')}</span>
+            <strong className="free">{deliveryCost > 0 ? formatPrice(deliveryCost) : t('common.free')}</strong>
           </div>
           <div className="summary-total">
-            <span>სულ გადასახდელი</span>
+            <span>{t('checkout.totalToPay')}</span>
             <strong>{formatPrice(grandTotal)}</strong>
           </div>
 
           <dl className="summary-details">
             <div>
-              <dt>ქალაქი</dt>
-              <dd>{form.city || '—'}</dd>
+              <dt>{t('checkout.city')}</dt>
+              <dd>{city || '—'}</dd>
             </div>
             <div>
-              <dt>მისამართი</dt>
+              <dt>{t('checkout.street')}</dt>
               <dd>{form.street.trim() || '—'}</dd>
             </div>
             <div>
-              <dt>მიწოდება</dt>
-              <dd>{delivery?.label}</dd>
+              <dt>{t('checkout.delivery')}</dt>
+              <dd>{dText.label}</dd>
             </div>
             <div>
-              <dt>სავარაუდო ვადა</dt>
-              <dd>{delivery?.estimate}</dd>
+              <dt>{t('checkout.estimatedTime')}</dt>
+              <dd>{dText.estimate}</dd>
             </div>
             <div>
-              <dt>გადახდა</dt>
+              <dt>{t('checkout.payment')}</dt>
               <dd>
-                {paymentLabel || '—'}
-                {paymentMethod === 'card' && selectedBank ? ` · ${selectedBank.name}` : ''}
+                {paymentMethod ? paymentLabel(paymentMethod) : '—'}
+                {paymentMethod === 'card' && selectedBank ? ` · ${bankName(selectedBank)}` : ''}
               </dd>
             </div>
           </dl>
 
           <p className="summary-note">
-            <Icon name="shield" size={14} /> ბარათის მონაცემებს მხოლოდ ბანკი ამუშავებს
+            <Icon name="shield" size={14} /> {t('checkout.cardSecurityNote')}
           </p>
 
-          <button
-            type="button"
-            className="cancel-order-btn"
-            onClick={cancelOrder}
-            disabled={submitting || cancelling}
-          >
+          <button type="button" className="cancel-order-btn" onClick={cancelOrder} disabled={submitting || cancelling}>
             {cancelling ? <span className="spinner" /> : <Icon name="x" size={16} />}
-            შეკვეთის გაუქმება
+            {t('checkout.cancelOrder')}
           </button>
         </aside>
       </div>

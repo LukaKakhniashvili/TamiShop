@@ -34,9 +34,11 @@ const year = () => new Date().getFullYear();
  * @param {string} [p.preheader] — inbox-ში ნაჩვენები მოკლე ტექსტი (არასავალდებულო)
  * @param {string} p.body       — წერილის შიგთავსი (HTML, ცხრილის რიგები)
  * @param {string} p.footerNote — ფუტერის ახსნა-განმარტება
+ * @param {string} [p.lang]     — html lang (ka/en/ru)
+ * @param {string} [p.rights]   — „ყველა უფლება დაცულია" წერილის ენაზე
  */
-const renderLayout = ({ title, preheader, body, footerNote }) => `<!doctype html>
-<html lang="ka" xmlns="http://www.w3.org/1999/xhtml">
+const renderLayout = ({ title, preheader, body, footerNote, lang = 'ka', rights = 'ყველა უფლება დაცულია.' }) => `<!doctype html>
+<html lang="${lang}" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -77,7 +79,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
     </td></tr>
     <!-- footer -->
     <tr><td align="center" style="padding:22px 16px 0 16px;font:400 12px/1.6 ${BRAND.font};color:${BRAND.muted};">
-      ${footerNote ? `${footerNote}<br>` : ''}© ${year()} ${esc(BRAND.name)}. ყველა უფლება დაცულია.
+      ${footerNote ? `${footerNote}<br>` : ''}© ${year()} ${esc(BRAND.name)}. ${esc(rights)}
     </td></tr>
   </table>
 </td></tr>

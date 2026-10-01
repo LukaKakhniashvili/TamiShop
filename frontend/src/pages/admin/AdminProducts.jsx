@@ -1,11 +1,28 @@
 import { useEffect, useState } from 'react';
 import api from '../../api/axios';
-import RichTextEditor from '../../components/RichTextEditor';
+import VariantEditor, { toEditorState, toPayload, validateVariantConfig } from '../../components/admin/VariantEditor';
+import { ProductContentEditor, TranslationsHint } from '../../components/admin/TranslationsEditor';
 import Icon from '../../components/Icon';
 import { useConfirm, useToast } from '../../context/UIContext';
 import { Alert, Field, Loader, Tabs, formatPrice } from '../../components/ui';
 
-const emptyForm = { name: '', description: '', price: '', oldPrice: '', onSale: false, specifications: [], image: '', images: [], category: '', inStock: true };
+const emptyForm = {
+  name: '',
+  description: '',
+  price: '',
+  oldPrice: '',
+  onSale: false,
+  specifications: [],
+  image: '',
+  images: [],
+  category: '',
+  inStock: true,
+  // ასარჩევი პარამეტრები (არასავალდებულო) — მახასიათებლებისგან (specifications) განცალკევებით
+  options: [],
+  variants: [],
+  // არასავალდებულო EN/RU თარგმანები { en: { name, description, specifications }, ru: {...} }
+  translations: {},
+};
 const emptyFilters = { search: '', category: '', inStock: '' };
 
 const AdminProducts = () => {
@@ -20,6 +37,8 @@ const AdminProducts = () => {
   const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  // კონტენტის ენის ჩანართი (ქართული | English | Русский)
+  const [contentLang, setContentLang] = useState('ka');
   const [dragOver, setDragOver] = useState(false);
 
   const [filters, setFilters] = useState(emptyFilters);
@@ -100,21 +119,38 @@ const AdminProducts = () => {
     setForm(emptyForm);
     setEditingId(null);
     setError('');
+    setContentLang('ka');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    // ქართული სახელი სავალდებულოა (სხვა ჩანართზე ყოფნისას ველი არ ჩანს — ვაბრუნებთ ქართულზე)
+    if (!form.name.trim()) {
+      setContentLang('ka');
+      setError('შეიყვანეთ პროდუქტის სახელი (ქართულად)');
+      document.getElementById('content-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
+    const variantErrors = validateVariantConfig(form.options, form.variants, { onSale: form.onSale });
+    if (variantErrors.length) {
+      setError(variantErrors[0]);
+      document.getElementById('variant-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     setSaving(true);
     try {
+      const configurable = form.options.length > 0;
       const payload = {
         ...form,
-        price: Number(form.price),
-        oldPrice: form.onSale ? Number(form.oldPrice) : null,
+        // ვარიანტიანზე ფასი/მარაგი სერვერზე ვარიანტებიდან ითვლება
+        price: configurable ? undefined : Number(form.price),
+        oldPrice: !configurable && form.onSale ? Number(form.oldPrice) : null,
         onSale: form.onSale,
         specifications: form.specifications,
         inStock: form.inStock,
         images: form.images || (form.image ? [form.image] : []),
+        ...toPayload(form.options, form.variants, { onSale: form.onSale }),
       };
       if (editingId) {
         await api.put(`/product-update/${editingId}`, payload);
@@ -136,6 +172,7 @@ const AdminProducts = () => {
   const handleEdit = (product) => {
     setEditingId(product._id);
     setError('');
+    setContentLang('ka');
     setForm({
       name: product.name,
       description: product.description || '',
@@ -147,6 +184,8 @@ const AdminProducts = () => {
       images: product.images || (product.image ? [product.image] : []),
       category: product.category?._id || product.category,
       inStock: product.inStock !== undefined ? product.inStock : true,
+      translations: product.translations || {},
+      ...toEditorState(product),
     });
     setActiveTab('form');
   };
@@ -172,6 +211,7 @@ const AdminProducts = () => {
   };
 
   const hasFilters = filters.search || filters.category || filters.inStock;
+  const configurable = form.options.length > 0;
 
   return (
     <div>
@@ -263,9 +303,17 @@ const AdminProducts = () => {
                       <td>
                         <img className="thumb-sm" src={p.image || p.images?.[0] || 'https://placehold.co/50x50'} alt="" />
                       </td>
-                      <td className="strong">{p.name}</td>
+                      <td className="strong">
+                        {p.name}
+                        {p.variants?.length > 0 && (
+                          <span className="sub">
+                            <Icon name="sliders" size={12} /> {p.variants.length} ვარიანტი · {(p.options || []).map((o) => o.name).join(', ')}
+                          </span>
+                        )}
+                      </td>
                       <td>{p.category?.name ? <span className="pill pill-neutral no-dot">{p.category.name}</span> : '—'}</td>
                       <td className="nowrap">
+                        {p.hasVariants && p.priceMax > p.price && <span className="sub">-დან</span>}
                         <span className="strong">{formatPrice(p.price)}</span>
                         {p.onSale && p.oldPrice && <span className="sub" style={{ textDecoration: 'line-through' }}>{formatPrice(p.oldPrice)}</span>}
                       </td>
@@ -303,9 +351,6 @@ const AdminProducts = () => {
           <section className="card card-pad">
             <h2 className="card-title">ძირითადი ინფორმაცია</h2>
             <div className="form-grid">
-              <Field label="სახელი" required>
-                <input className="input" name="name" value={form.name} onChange={handleChange} required />
-              </Field>
               <Field label="კატეგორია" required>
                 <select className="select" name="category" value={form.category} onChange={handleChange} required>
                   <option value="">აირჩიეთ...</option>
@@ -319,23 +364,52 @@ const AdminProducts = () => {
             </div>
           </section>
 
+          <section className="card card-pad" id="content-section">
+            <h2 className="card-title">
+              <Icon name="globe" size={18} /> სახელი და აღწერა
+            </h2>
+            <TranslationsHint />
+            <ProductContentEditor form={form} setForm={setForm} lang={contentLang} onLangChange={setContentLang} editorKey={editingId || 'new'} />
+          </section>
+
           <section className="card card-pad">
             <h2 className="card-title">ფასი და მარაგი</h2>
+            {configurable && (
+              <Alert type="info">
+                ფასი, ფასდაკლება და მარაგი ითვლება ვარიანტებიდან (ქვემოთ „ოფციები და ვარიანტები"). „ფასდაკლებაშია" ჩართვით
+                ვარიანტებზე ძველი ფასის მითითება შეგიძლიათ.
+              </Alert>
+            )}
             <div className="form-grid">
-              <Field label="მიმდინარე ფასი (₾)" required>
-                <input className="input" name="price" type="number" step="0.01" min="0" value={form.price} onChange={handleChange} required />
+              <Field label="მიმდინარე ფასი (₾)" required={!configurable} hint={configurable ? 'ვარიანტებიდან' : undefined}>
+                <input
+                  className="input"
+                  name="price"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={configurable ? '' : form.price}
+                  onChange={handleChange}
+                  required={!configurable}
+                  disabled={configurable}
+                  placeholder={configurable ? 'ვარიანტების მიხედვით' : undefined}
+                />
               </Field>
-              <Field label="ძველი ფასი (₾)" required={form.onSale} hint={!form.onSale ? 'ჩართეთ ფასდაკლება ძველი ფასის მისათითებლად' : undefined}>
+              <Field
+                label="ძველი ფასი (₾)"
+                required={form.onSale && !configurable}
+                hint={configurable ? 'ვარიანტებიდან' : !form.onSale ? 'ჩართეთ ფასდაკლება ძველი ფასის მისათითებლად' : undefined}
+              >
                 <input
                   className="input"
                   name="oldPrice"
                   type="number"
                   step="0.01"
                   min="0"
-                  value={form.oldPrice}
+                  value={configurable ? '' : form.oldPrice}
                   onChange={handleChange}
-                  disabled={!form.onSale}
-                  required={form.onSale}
+                  disabled={!form.onSale || configurable}
+                  required={form.onSale && !configurable}
                 />
               </Field>
               <label className="switch">
@@ -347,11 +421,13 @@ const AdminProducts = () => {
                 <span className="track" />
                 ფასდაკლებაშია
               </label>
-              <label className="switch">
-                <input type="checkbox" checked={form.inStock} onChange={(e) => setForm({ ...form, inStock: e.target.checked })} />
-                <span className="track" />
-                მარაგშია
-              </label>
+              {!configurable && (
+                <label className="switch">
+                  <input type="checkbox" checked={form.inStock} onChange={(e) => setForm({ ...form, inStock: e.target.checked })} />
+                  <span className="track" />
+                  მარაგშია
+                </label>
+              )}
             </div>
           </section>
 
@@ -436,7 +512,19 @@ const AdminProducts = () => {
                     className="icon-btn"
                     style={{ color: 'var(--danger)', width: 38, height: 38 }}
                     aria-label="წაშლა"
-                    onClick={() => setForm({ ...form, specifications: form.specifications.filter((_, i) => i !== index) })}
+                    onClick={() =>
+                      // თარგმანები ინდექსით არის მიბმული — იგივე მწკრივი იშლება თარგმანებშიც
+                      setForm({
+                        ...form,
+                        specifications: form.specifications.filter((_, i) => i !== index),
+                        translations: Object.fromEntries(
+                          Object.entries(form.translations || {}).map(([lng, tr]) => [
+                            lng,
+                            { ...tr, specifications: (tr.specifications || []).filter((_, i) => i !== index) },
+                          ])
+                        ),
+                      })
+                    }
                   >
                     <Icon name="trash" size={16} />
                   </button>
@@ -453,10 +541,25 @@ const AdminProducts = () => {
             </div>
           </section>
 
-          <section className="card card-pad">
-            <h2 className="card-title">აღწერა</h2>
-            <RichTextEditor key={editingId || 'new'} defaultValue={form.description} onChange={(val) => setForm((prev) => ({ ...prev, description: val }))} />
+          <section className="card card-pad" id="variant-section">
+            <h2 className="card-title">
+              <Icon name="sliders" size={18} /> ოფციები და ვარიანტები <span className="pill pill-neutral no-dot">არასავალდებულო</span>
+            </h2>
+            <p className="muted ve-intro">
+              გამოიყენეთ, როცა მყიდველმა უნდა აირჩიოს მაგ. ფერი, მეხსიერება, ზომა ან მოცულობა — თითო კომბინაციას საკუთარი
+              ფასი, მარაგი და SKU აქვს. საინფორმაციო მონაცემებისთვის (ეკრანი, პროცესორი...) გამოიყენეთ „მახასიათებლები".
+            </p>
+            <VariantEditor
+              options={form.options}
+              variants={form.variants}
+              onSale={form.onSale}
+              basePrice={form.price}
+              onChange={(updater) =>
+                setForm((prev) => ({ ...prev, ...updater({ options: prev.options, variants: prev.variants }) }))
+              }
+            />
           </section>
+
 
           <div className="form-actions">
             <button className="btn btn-primary btn-lg" type="submit" disabled={saving}>

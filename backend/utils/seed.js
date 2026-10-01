@@ -64,7 +64,10 @@ const run = async () => {
   process.exit(0);
 };
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// მხოლოდ პირდაპირ გაშვებისას (node utils/...) — require()-ით ჩატვირთვა ბაზას არ ეხება
+if (require.main === module) {
+  run().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

@@ -1,6 +1,7 @@
 const asyncHandler = require('express-async-handler');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+const { normalizeTranslations, CATEGORY_TRANSLATION_FIELDS } = require('../utils/translations');
 
 const slugify = (str) => {
   const slug = str
@@ -77,6 +78,7 @@ const createCategory = asyncHandler(async (req, res) => {
   const category = await Category.create({
     name,
     description,
+    translations: normalizeTranslations(req.body.translations, CATEGORY_TRANSLATION_FIELDS),
     slug: slugify(name),
     order: nextOrder
   });
@@ -101,6 +103,10 @@ const updateCategory = asyncHandler(async (req, res) => {
   }
   if (description !== undefined) category.description = description;
   if (isActive !== undefined) category.isActive = isActive;
+  if (req.body.translations !== undefined) {
+    category.translations = normalizeTranslations(req.body.translations, CATEGORY_TRANSLATION_FIELDS);
+    category.markModified('translations');
+  }
 
   const updated = await category.save();
   res.json(updated);

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import ProductCard from '../ProductCard';
 import Icon from '../Icon';
 
@@ -50,6 +51,7 @@ const RailSkeleton = () =>
  * @param variant     'deals' — გამოკვეთილი დიზაინი
  */
 const ProductRail = ({ id, icon, eyebrow, title, subtitle, action, products, cardProps, empty, variant }) => {
+  const { t } = useTranslation();
   const [sectionRef, inView] = useInView();
   const trackRef = useRef(null);
   const [edges, setEdges] = useState({ start: true, end: true });
@@ -100,10 +102,10 @@ const ProductRail = ({ id, icon, eyebrow, title, subtitle, action, products, car
           )}
           {!isEmpty && (
             <div className="rail-arrows">
-              <button type="button" onClick={() => scrollBy(-1)} disabled={edges.start} aria-label="წინა">
+              <button type="button" onClick={() => scrollBy(-1)} disabled={edges.start} aria-label={t('common.previous')}>
                 <Icon name="chevronLeft" size={18} />
               </button>
-              <button type="button" onClick={() => scrollBy(1)} disabled={edges.end} aria-label="შემდეგი">
+              <button type="button" onClick={() => scrollBy(1)} disabled={edges.end} aria-label={t('common.next')}>
                 <Icon name="chevronRight" size={18} />
               </button>
             </div>

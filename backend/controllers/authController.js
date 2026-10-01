@@ -7,6 +7,7 @@ const { sendVerificationEmail } = require('../services/email/emailService');
 const { normalizeEmail, isValidEmail, issueCode, codeStatus, checkCode } = require('../services/verificationCodes');
 const { validatePassword } = require('../utils/passwordPolicy');
 const httpError = require('../utils/httpError');
+const { requestLanguage } = require('../utils/requestLanguage');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -34,8 +35,7 @@ const googleLogin = asyncHandler(async (req, res) => {
   const { credential } = req.body;
 
   if (!credential) {
-    res.status(400);
-    throw new Error('Google credential არ არის მოწოდებული');
+    throw httpError(400, 'Google credential არ არის მოწოდებული', { code: 'GOOGLE_FAILED' });
   }
 
   const ticket = await googleClient.verifyIdToken({
@@ -63,8 +63,7 @@ const googleLogin = asyncHandler(async (req, res) => {
   }
 
   if (!user.isActive) {
-    res.status(403);
-    throw new Error('თქვენი ანგარიში დეაქტივირებულია');
+    throw httpError(403, 'თქვენი ანგარიში დეაქტივირებულია', { code: 'ACCOUNT_DISABLED' });
   }
 
   res.json({ token: generateToken(user._id), user: publicUser(user) });
@@ -77,8 +76,7 @@ const register = asyncHandler(async (req, res) => {
   const { firstName, lastName, phone, email, password, city, street, code } = req.body;
 
   if (!firstName || !email || !password || !code) {
-    res.status(400);
-    throw new Error('ყველა სავალდებულო ველი უნდა იყოს შევსებული');
+    throw httpError(400, 'ყველა სავალდებულო ველი უნდა იყოს შევსებული', { code: 'REQUIRED_FIELDS' });
   }
 
   const passwordError = validatePassword(password);
@@ -99,8 +97,7 @@ const register = asyncHandler(async (req, res) => {
 
   const userExists = await User.findOne({ email: email.toLowerCase() });
   if (userExists) {
-    res.status(400);
-    throw new Error('მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს');
+    throw httpError(400, 'მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს', { code: 'EMAIL_EXISTS' });
   }
 
   await otpRecord.deleteOne();
@@ -128,20 +125,17 @@ const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    res.status(400);
-    throw new Error('ელ. ფოსტა და პაროლი სავალდებულოა');
+    throw httpError(400, 'ელ. ფოსტა და პაროლი სავალდებულოა', { code: 'REQUIRED_FIELDS' });
   }
 
   const user = await User.findOne({ email: String(email).toLowerCase() }).select('+password');
 
   if (!user || !(await user.matchPassword(password))) {
-    res.status(401);
-    throw new Error('ელ. ფოსტა ან პაროლი არასწორია');
+    throw httpError(401, 'ელ. ფოსტა ან პაროლი არასწორია', { code: 'INVALID_CREDENTIALS' });
   }
 
   if (!user.isActive) {
-    res.status(403);
-    throw new Error('თქვენი ანგარიში დეაქტივირებულია');
+    throw httpError(403, 'თქვენი ანგარიში დეაქტივირებულია', { code: 'ACCOUNT_DISABLED' });
   }
 
   res.json({ token: generateToken(user._id), user: publicUser(user) });
@@ -156,12 +150,12 @@ const login = asyncHandler(async (req, res) => {
 // @access  Public
 const sendOtp = asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email);
-  if (!isValidEmail(email)) throw httpError(400, 'შეიყვანეთ სწორი ელ. ფოსტა');
+  if (!isValidEmail(email)) throw httpError(400, 'შეიყვანეთ სწორი ელ. ფოსტა', { code: 'INVALID_EMAIL' });
 
-  if (await User.exists({ email })) throw httpError(400, 'მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს');
+  if (await User.exists({ email })) throw httpError(400, 'მომხმარებელი ამ ელ. ფოსტით უკვე არსებობს', { code: 'EMAIL_EXISTS' });
 
   const timers = await issueCode(Otp, email, (code, expiresInMinutes) =>
-    sendVerificationEmail({ to: email, code, expiresInMinutes })
+    sendVerificationEmail({ to: email, code, expiresInMinutes, lng: requestLanguage(req) })
   );
   res.json({ message: 'ვერიფიკაციის კოდი გაიგზავნა', ...timers });
 });
@@ -179,7 +173,7 @@ const otpStatus = asyncHandler(async (req, res) => {
 const verifyOtp = asyncHandler(async (req, res) => {
   const email = normalizeEmail(req.body.email);
   const code = String(req.body.code || '').trim();
-  if (!email || !code) throw httpError(400, 'ელ. ფოსტა და კოდი სავალდებულოა');
+  if (!email || !code) throw httpError(400, 'ელ. ფოსტა და კოდი სავალდებულოა', { code: 'REQUIRED_FIELDS' });
 
   const otp = await checkCode(Otp, email, code);
 

@@ -1,6 +1,6 @@
 const Order = require('../models/Order');
-const Product = require('../models/Product');
 const User = require('../models/User');
+const { reserveStock, orderStockLines } = require('./productVariants');
 const { getPaymentProvider } = require('./payments');
 const emailService = require('./email/emailService');
 
@@ -11,9 +11,19 @@ const CURRENCY = 'GEL';
  * მონაცემების შენახვა. კურიერთან გადახდისას — მაშინვე, ბარათით — მხოლოდ გადახდის შემდეგ.
  */
 const applyConfirmedOrderEffects = async (order) => {
-  await Promise.all(
-    order.items.map((item) => Product.findByIdAndUpdate(item.product, { $inc: { stock: -item.quantity } }))
-  );
+  // ვარიანტების მარაგი: კურიერთან გადახდისას უკვე დაჯავშნილია შეკვეთის შექმნისას; ბარათით — აქ, გადახდის შემდეგ.
+  // (მარტივ პროდუქტს რაოდენობრივი მარაგი არ აქვს — მხოლოდ inStock.)
+  const lines = orderStockLines(order);
+  if (lines.length && !order.inventory?.reserved) {
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, 'inventory.reserved': { $ne: true } },
+      { $set: { 'inventory.reserved': true } }
+    );
+    if (claimed) {
+      const r = await reserveStock(lines);
+      if (!r.ok) console.warn(`[inventory] ${order.orderNumber}: paid order exceeds variant stock — check inventory`);
+    }
+  }
   const info = order.customerInfo;
   await User.findByIdAndUpdate(order.user, {
     firstName: info.firstName,

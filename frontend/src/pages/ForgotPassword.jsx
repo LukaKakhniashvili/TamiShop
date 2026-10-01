@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import { useToast } from '../context/UIContext';
 import Icon from '../components/Icon';
@@ -7,27 +8,26 @@ import PasswordRules from '../components/PasswordRules';
 import VerificationCodePanel from '../components/VerificationCodePanel';
 import { Alert, Field, IconInput, PasswordInput } from '../components/ui';
 import useVerificationCode from '../hooks/useVerificationCode';
-import { PASSWORDS_MISMATCH_MESSAGE, validatePassword } from '../utils/passwordPolicy';
+import { passwordsMismatchMessage, validatePassword } from '../utils/passwordPolicy';
+import { apiErrorMessage } from '../i18n/errors';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REDIRECT_SECONDS = 4;
 
-const STEPS = [
-  { id: 'email', label: 'ელ. ფოსტა' },
-  { id: 'code', label: 'კოდი' },
-  { id: 'password', label: 'ახალი პაროლი' },
-];
+const STEPS = ['email', 'code', 'password'];
 
 const Steps = ({ step }) => {
-  const current = step === 'done' ? STEPS.length : STEPS.findIndex((s) => s.id === step);
+  const { t } = useTranslation();
+  const current = step === 'done' ? STEPS.length : STEPS.indexOf(step);
   return (
-    <div className="steps recovery-steps" aria-label="აღდგენის ეტაპები">
+    <div className="steps recovery-steps" aria-label={t('recovery.stepsLabel')}>
       {STEPS.map((s, i) => (
-        <div key={s.id} style={{ display: 'contents' }}>
+        <div key={s} style={{ display: 'contents' }}>
           {i > 0 && <div className={`line ${i <= current ? 'done' : ''}`} />}
           <div className={`step ${i < current ? 'done' : i === current ? 'active' : ''}`} aria-current={i === current ? 'step' : undefined}>
             <span className="dot">{i < current ? <Icon name="check" size={14} strokeWidth={3} /> : i + 1}</span>
-            <span className="step-label">{s.label}</span>
+            <span className="step-label">{t(`recovery.steps.${s}`)}</span>
           </div>
         </div>
       ))}
@@ -41,6 +41,8 @@ const Steps = ({ step }) => {
  * ახალი პაროლი იგზავნება მხოლოდ ამ token-ით.
  */
 const ForgotPassword = () => {
+  const { t } = useTranslation();
+  useDocumentMeta(t('recovery.title'));
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -75,8 +77,8 @@ const ForgotPassword = () => {
       navigate('/login', { replace: true, state: { email } });
       return undefined;
     }
-    const t = setTimeout(() => setRedirectIn((s) => s - 1), 1000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setRedirectIn((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
   }, [done, redirectIn, navigate, email]);
 
   // ---- ნაბიჯი 1: ელ. ფოსტა
@@ -85,7 +87,7 @@ const ForgotPassword = () => {
     setError('');
     setEmailNotFound(false);
     if (!EMAIL_RE.test(email.trim())) {
-      setEmailError('შეიყვანეთ სწორი ელ. ფოსტა');
+      setEmailError(t('errors.codes.INVALID_EMAIL'));
       return;
     }
     setEmailError('');
@@ -94,7 +96,7 @@ const ForgotPassword = () => {
     if (!r.ok) {
       if (r.data?.code === 'EMAIL_NOT_FOUND') {
         setEmailNotFound(true);
-        setEmailError('ელ. ფოსტა ვერ მოიძებნა. გთხოვთ, დარეგისტრირდეთ.');
+        setEmailError(t('errors.codes.EMAIL_NOT_FOUND'));
       } else if (r.data?.field === 'email') setEmailError(r.error);
       else setError(r.error);
       return;
@@ -102,8 +104,8 @@ const ForgotPassword = () => {
     setCode('');
     toast({
       type: 'success',
-      title: r.isResend ? 'ახალი კოდი გაიგზავნა' : 'აღდგენის კოდი წარმატებით გაიგზავნა',
-      description: r.isResend ? 'ახალი ვერიფიკაციის კოდი გაიგზავნა თქვენს ელ. ფოსტაზე' : undefined,
+      title: r.isResend ? t('otp.resentTitle') : t('recovery.codeSent'),
+      description: r.isResend ? t('otp.resentText') : undefined,
     });
   };
 
@@ -121,12 +123,12 @@ const ForgotPassword = () => {
       const { data } = await api.post('/auth-password-reset-code-verify', { email: email.trim(), code });
       setResetToken(data.resetToken);
       vc.clearStorage();
-      toast({ type: 'success', title: 'კოდი დადასტურდა', description: 'შეიყვანეთ ახალი პაროლი' });
+      toast({ type: 'success', title: t('recovery.codeVerified'), description: t('recovery.enterNewPassword') });
     } catch (err) {
       const res = err.response?.data;
       if (['CODE_EXPIRED', 'TOO_MANY_ATTEMPTS', 'CODE_NOT_FOUND'].includes(res?.code)) setCode('');
       if (res?.code === 'CODE_EXPIRED') vc.markExpired();
-      else setError(res?.message || 'კოდის შემოწმება ვერ მოხერხდა');
+      else setError(apiErrorMessage(err, 'otp.verifyFailed'));
     } finally {
       setVerifying(false);
     }
@@ -136,9 +138,9 @@ const ForgotPassword = () => {
   const live = {
     newPassword: validatePassword(passwords.newPassword),
     confirmPassword: !passwords.confirmPassword
-      ? 'გაიმეორეთ ახალი პაროლი'
+      ? t('password.repeatRequired')
       : passwords.confirmPassword !== passwords.newPassword
-        ? PASSWORDS_MISMATCH_MESSAGE
+        ? passwordsMismatchMessage()
         : null,
   };
   const shown = (name) => serverFieldErrors[name] || (touched[name] ? live[name] : null);
@@ -169,9 +171,9 @@ const ForgotPassword = () => {
         setResetToken('');
         setPasswords({ newPassword: '', confirmPassword: '' });
         vc.reset();
-        setError(res.message);
-      } else if (res?.field) setServerFieldErrors({ [res.field]: res.message });
-      else setError(res?.message || 'პაროლის შეცვლა ვერ მოხერხდა. სცადეთ თავიდან.');
+        setError(apiErrorMessage(err, 'password.changeFailed'));
+      } else if (res?.field) setServerFieldErrors({ [res.field]: apiErrorMessage(err, 'password.changeFailed') });
+      else setError(apiErrorMessage(err, 'password.changeFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -197,12 +199,9 @@ const ForgotPassword = () => {
           <div className="brand-mark">
             <Icon name={step === 'done' ? 'check' : 'lock'} size={22} />
           </div>
-          <h1>ანგარიშის აღდგენა</h1>
+          <h1>{t('recovery.title')}</h1>
           <p>
-            {step === 'email' && 'შეიყვანეთ ანგარიშის ელ. ფოსტა — გამოგიგზავნით აღდგენის კოდს'}
-            {step === 'code' && 'შეიყვანეთ ელ. ფოსტაზე მიღებული 4-ნიშნა კოდი'}
-            {step === 'password' && 'შექმენით ახალი პაროლი'}
-            {step === 'done' && 'პაროლი განახლებულია'}
+            {t(`recovery.subtitle.${step}`)}
           </p>
         </div>
 
@@ -213,7 +212,7 @@ const ForgotPassword = () => {
 
           {step === 'email' && (
             <form className="form-stack" onSubmit={sendCode} noValidate>
-              <Field label="ელ. ფოსტა" required>
+              <Field label={t('auth.email')} required>
                 <IconInput
                   icon="mail"
                   type="email"
@@ -229,7 +228,7 @@ const ForgotPassword = () => {
                   aria-describedby={emailError ? 'rp-email-error' : undefined}
                   disabled={Boolean(vc.sending)}
                   autoComplete="email"
-                  placeholder="შეიყვანეთ ელ. ფოსტა"
+                  placeholder={t('recovery.emailPlaceholder')}
                   autoFocus
                 />
                 {emailError && (
@@ -237,7 +236,7 @@ const ForgotPassword = () => {
                     {emailError}{' '}
                     {emailNotFound && (
                       <Link to="/register" className="link">
-                        რეგისტრაცია
+                        {t('auth.register.link')}
                       </Link>
                     )}
                   </span>
@@ -246,11 +245,11 @@ const ForgotPassword = () => {
               <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={Boolean(vc.sending) || !email || vc.resendIn > 0}>
                 {vc.sending ? (
                   <>
-                    <span className="spinner" /> იგზავნება...
+                    <span className="spinner" /> {t('common.sending')}
                   </>
                 ) : (
                   <>
-                    გაგრძელება <Icon name="arrowRight" size={18} />
+                    {t('common.continue')} <Icon name="arrowRight" size={18} />
                   </>
                 )}
               </button>
@@ -263,7 +262,7 @@ const ForgotPassword = () => {
                 <Icon name="mail" size={16} />
                 <span>{email}</span>
                 <button type="button" className="link recovery-change" onClick={changeEmail}>
-                  შეცვლა
+                  {t('common.change')}
                 </button>
               </div>
               <VerificationCodePanel
@@ -279,7 +278,7 @@ const ForgotPassword = () => {
 
           {step === 'password' && (
             <form className="form-stack" onSubmit={submitPassword} noValidate>
-              <Field label="ახალი პაროლი" required>
+              <Field label={t('password.new')} required>
                 <PasswordInput {...passwordProps('newPassword')} autoFocus />
                 {shown('newPassword') && (
                   <span className="field-error" id="rp-newPassword-error" role="alert">
@@ -288,7 +287,7 @@ const ForgotPassword = () => {
                 )}
                 <PasswordRules password={passwords.newPassword} />
               </Field>
-              <Field label="გაიმეორეთ ახალი პაროლი" required>
+              <Field label={t('password.repeat')} required>
                 <PasswordInput {...passwordProps('confirmPassword')} />
                 {shown('confirmPassword') && (
                   <span className="field-error" id="rp-confirmPassword-error" role="alert">
@@ -299,11 +298,11 @@ const ForgotPassword = () => {
               <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={!canSubmit}>
                 {submitting ? (
                   <>
-                    <span className="spinner" /> ინახება...
+                    <span className="spinner" /> {t('common.saving')}
                   </>
                 ) : (
                   <>
-                    <Icon name="lock" size={18} /> პაროლის შეცვლა
+                    <Icon name="lock" size={18} /> {t('password.change')}
                   </>
                 )}
               </button>
@@ -312,12 +311,12 @@ const ForgotPassword = () => {
 
           {step === 'done' && (
             <>
-              <Alert type="success">თქვენი პაროლი წარმატებით შეიცვალა. ახლა შეგიძლიათ შეხვიდეთ ახალი პაროლით.</Alert>
+              <Alert type="success">{t('recovery.successText')}</Alert>
               <p className="field-hint" style={{ textAlign: 'center' }} aria-live="polite">
-                შესვლის გვერდზე გადახვალთ {redirectIn} წამში...
+                {t('recovery.redirectIn', { count: redirectIn })}
               </p>
               <Link to="/login" state={{ email }} replace className="btn btn-primary btn-lg btn-block">
-                შესვლა <Icon name="arrowRight" size={18} />
+                {t('auth.login.submit')} <Icon name="arrowRight" size={18} />
               </Link>
             </>
           )}
@@ -325,9 +324,9 @@ const ForgotPassword = () => {
 
         {step !== 'done' && (
           <p className="auth-foot">
-            გაგახსენდათ პაროლი?{' '}
+            {t('recovery.remembered')}{' '}
             <Link to="/login" className="link">
-              შესვლა
+              {t('auth.login.submit')}
             </Link>
           </p>
         )}

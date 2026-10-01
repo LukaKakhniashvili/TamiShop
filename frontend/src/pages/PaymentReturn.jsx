@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Icon from '../components/Icon';
 import { PAYMENT_RETURN_MESSAGE } from '../components/checkout/PaymentModal';
 
@@ -10,6 +11,7 @@ import { PAYMENT_RETURN_MESSAGE } from '../components/checkout/PaymentModal';
  * პარამეტრი მხოლოდ ტექსტის საჩვენებლადაა და გადაწყვეტილებას მასზე არ ვიღებთ.
  */
 const PaymentReturn = () => {
+  const { t } = useTranslation();
   const [params] = useSearchParams();
   const orderId = params.get('order');
   const result = params.get('result');
@@ -37,16 +39,16 @@ const PaymentReturn = () => {
             <span className={`pay-state-icon ${ok ? 'ok' : ''}`}>
               <Icon name={ok ? 'check' : 'info'} size={28} />
             </span>
-            <strong>{ok ? 'ბანკმა გადახდა დაამუშავა' : 'გადახდის პროცესი დასრულდა'}</strong>
-            <span>დაბრუნდით მაღაზიის ფანჯარაში — შეკვეთის სტატუსი იქ ავტომატურად განახლდება.</span>
+            <strong>{ok ? t('paymentReturn.processed') : t('paymentReturn.finished')}</strong>
+            <span>{t('paymentReturn.text')}</span>
             <Link to="/profile?tab=orders" className="btn">
-              ჩემი შეკვეთები
+              {t('nav.myOrders')}
             </Link>
           </>
         ) : (
           <>
             <span className="spinner" />
-            <strong>მოწმდება გადახდის სტატუსი...</strong>
+            <strong>{t('payment.verifying')}</strong>
           </>
         )}
       </div>

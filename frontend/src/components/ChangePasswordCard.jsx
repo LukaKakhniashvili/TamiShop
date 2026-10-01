@@ -1,29 +1,32 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api/axios';
 import { useToast } from '../context/UIContext';
 import Icon from './Icon';
 import PasswordRules from './PasswordRules';
 import { Alert, Field, PasswordInput } from './ui';
-import { PASSWORDS_MISMATCH_MESSAGE, validatePassword } from '../utils/passwordPolicy';
+import { passwordsMismatchMessage, validatePassword } from '../utils/passwordPolicy';
+import i18n from '../i18n';
+import { apiErrorMessage } from '../i18n/errors';
 
 const empty = { currentPassword: '', newPassword: '', confirmPassword: '' };
-const SAME_PASSWORD_MESSAGE = 'ახალი პაროლი უნდა განსხვავდებოდეს მიმდინარე პაროლისგან.';
 
 // კლიენტის ვალიდაცია — იგივე წესები, რასაც სერვერი ამოწმებს (backend/controllers/passwordController.js)
 const validate = (f) => {
   const e = {};
-  if (!f.currentPassword) e.currentPassword = 'შეიყვანეთ მიმდინარე პაროლი';
+  if (!f.currentPassword) e.currentPassword = i18n.t('errors.codes.CURRENT_PASSWORD_REQUIRED');
   const policy = validatePassword(f.newPassword);
   if (policy) e.newPassword = policy;
-  else if (f.currentPassword && f.newPassword === f.currentPassword) e.newPassword = SAME_PASSWORD_MESSAGE;
-  if (!f.confirmPassword) e.confirmPassword = 'გაიმეორეთ ახალი პაროლი';
-  else if (f.confirmPassword !== f.newPassword) e.confirmPassword = PASSWORDS_MISMATCH_MESSAGE;
+  else if (f.currentPassword && f.newPassword === f.currentPassword) e.newPassword = i18n.t('errors.codes.SAME_PASSWORD');
+  if (!f.confirmPassword) e.confirmPassword = i18n.t('password.repeatRequired');
+  else if (f.confirmPassword !== f.newPassword) e.confirmPassword = passwordsMismatchMessage();
   return e;
 };
 
 /** პროფილი → პაროლის შეცვლა (ავტორიზებული მომხმარებელი) */
 const ChangePasswordCard = () => {
+  const { t } = useTranslation();
   const toast = useToast();
   const [form, setForm] = useState(empty);
   const [errors, setErrors] = useState({});
@@ -64,15 +67,15 @@ const ChangePasswordCard = () => {
       setForm(empty);
       setTouched({});
       setErrors({});
-      setSuccess('პაროლი წარმატებით შეიცვალა.');
-      toast({ type: 'success', title: 'პაროლი წარმატებით შეიცვალა.' });
+      setSuccess(t('password.changed'));
+      toast({ type: 'success', title: t('password.changed') });
     } catch (err) {
       const res = err.response?.data;
       if (res?.code === 'NO_PASSWORD') setNoPassword(true);
       if (res?.field) {
-        setErrors({ [res.field]: res.message });
+        setErrors({ [res.field]: apiErrorMessage(err, 'password.changeFailed') });
         document.getElementById(`cp-${res.field}`)?.focus();
-      } else setError(res?.message || 'პაროლის შეცვლა ვერ მოხერხდა. სცადეთ თავიდან.');
+      } else setError(apiErrorMessage(err, 'password.changeFailed'));
     } finally {
       setSaving(false);
     }
@@ -101,7 +104,7 @@ const ChangePasswordCard = () => {
   return (
     <form className="card card-pad change-password" onSubmit={handleSubmit} noValidate>
       <h2 className="card-title">
-        <Icon name="lock" size={18} /> პაროლის შეცვლა
+        <Icon name="lock" size={18} /> {t('password.change')}
       </h2>
 
       <div className="form-stack">
@@ -109,23 +112,23 @@ const ChangePasswordCard = () => {
         {noPassword && (
           <Alert type="info">
             <Link to="/forgot-password" className="link">
-              ანგარიშის აღდგენა
+              {t('auth.login.recover')}
             </Link>
           </Alert>
         )}
         <Alert type="success">{success}</Alert>
 
-        <Field label="მიმდინარე პაროლი" required>
+        <Field label={t('password.current')} required>
           <PasswordInput {...fieldProps('currentPassword', 'current-password')} />
           <FieldError name="currentPassword" />
         </Field>
 
         <div className="form-grid">
-          <Field label="ახალი პაროლი" required>
+          <Field label={t('password.new')} required>
             <PasswordInput {...fieldProps('newPassword', 'new-password')} />
             <FieldError name="newPassword" />
           </Field>
-          <Field label="გაიმეორეთ ახალი პაროლი" required>
+          <Field label={t('password.repeat')} required>
             <PasswordInput {...fieldProps('confirmPassword', 'new-password')} />
             <FieldError name="confirmPassword" />
           </Field>
@@ -136,11 +139,11 @@ const ChangePasswordCard = () => {
           <button className="btn btn-primary btn-lg" type="submit" disabled={saving}>
             {saving ? (
               <>
-                <span className="spinner" /> ინახება...
+                <span className="spinner" /> {t('common.saving')}
               </>
             ) : (
               <>
-                <Icon name="lock" size={18} /> პაროლის შეცვლა
+                <Icon name="lock" size={18} /> {t('password.change')}
               </>
             )}
           </button>

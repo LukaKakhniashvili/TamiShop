@@ -23,7 +23,8 @@ app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5173",
     credentials: true,
-    exposedHeaders: ["Retry-After"], // ფრონტენდი კითხულობს ხელახლა მოთხოვნამდე დარჩენილ დროს
+    // Retry-After — ხელახლა მოთხოვნამდე დარჩენილი დრო; Content-Disposition / X-Export-Count — Excel ექსპორტი
+    exposedHeaders: ["Retry-After", "Content-Disposition", "X-Export-Count"],
   }),
 );
 app.use(express.json({ limit: "10mb" }));

@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Product = require('../models/Product');
 const { discountPercent, getSalesCounts, withComputedFields } = require('./productStats');
 
-const CATEGORY_FIELDS = 'name slug';
+const CATEGORY_FIELDS = 'name slug translations';
 
 /*
  * სიგნალების წონები. ალგორითმის გასაუმჯობესებლად საკმარისია აქ წონების შეცვლა

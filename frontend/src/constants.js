@@ -15,6 +15,14 @@ export const statusLabels = {
   cancelled: 'გაუქმებულია',
 };
 
+// ადმინის „შემდეგი ნაბიჯის" ღილაკის ტექსტი. რომელი ნაბიჯია დასაშვები — წყვეტს სერვერი
+// (backend/constants/orderStatus.js → order.actions.next); აქ მხოლოდ წარწერებია.
+export const nextStatusActionLabels = {
+  processing: 'დამუშავებაში გადატანა',
+  shipped: 'გაგზავნილად მონიშვნა',
+  completed: 'დასრულებულად მონიშვნა',
+};
+
 export const paymentMethodLabels = {
   card: 'ბარათით',
   cod: 'კურიერთან',

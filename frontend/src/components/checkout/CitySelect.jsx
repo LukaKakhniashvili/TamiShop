@@ -1,11 +1,24 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import i18n from '../../i18n';
+import { useTranslation } from 'react-i18next';
 import Icon from '../Icon';
+
+// ქალაქის საჩვენებელი სახელი: ქართულად — ქართული, სხვა ენაზე — ლათინური.
+// შეკვეთაში ყოველთვის ქართული სახელი (name) იგზავნება.
+export const cityLabel = (cities = [], name, lng) => {
+  if (!name) return '';
+  const lang = lng || i18n.language;
+  if (lang === 'ka') return name;
+  return cities.find((c) => c.name === name)?.latin || name;
+};
 
 /**
  * ძებნადი ქალაქის ამომრჩევი (combobox). ეძებს ქართულად და ლათინურად ("tbil" → თბილისი).
  * @param cities  [{ name, latin }] — სერვერიდან (GET /api/order-checkout-options)
  */
-const CitySelect = ({ cities = [], value, onChange, invalid, placeholder = 'აირჩიეთ ქალაქი', id }) => {
+const CitySelect = ({ cities = [], value, onChange, invalid, placeholder, id }) => {
+  const { t, i18n: inst } = useTranslation();
+  const isKa = inst.language === 'ka';
   const autoId = useId();
   const listId = `${id || autoId}-list`;
   const [open, setOpen] = useState(false);
@@ -68,7 +81,7 @@ const CitySelect = ({ cities = [], value, onChange, invalid, placeholder = 'ა�
         onClick={() => setOpen((o) => !o)}
       >
         <Icon name="pin" size={18} />
-        <span>{value || placeholder}</span>
+        <span>{value ? cityLabel(cities, value, inst.language) : placeholder || t('checkout.chooseCity')}</span>
         <Icon name="chevronDown" size={16} className="chev" />
       </button>
 
@@ -81,7 +94,7 @@ const CitySelect = ({ cities = [], value, onChange, invalid, placeholder = 'ა�
             <input
               ref={searchRef}
               className="input input-sm"
-              placeholder="მოძებნე ქალაქი..."
+              placeholder={t('checkout.searchCity')}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onKeyDown}
@@ -105,12 +118,12 @@ const CitySelect = ({ cities = [], value, onChange, invalid, placeholder = 'ა�
                   choose(c);
                 }}
               >
-                <span>{c.name}</span>
-                <small>{c.latin}</small>
+                <span>{isKa ? c.name : c.latin}</span>
+                <small>{isKa ? c.latin : c.name}</small>
                 {c.name === value && <Icon name="check" size={16} />}
               </li>
             ))}
-            {filtered.length === 0 && <li className="city-empty">ქალაქი ვერ მოიძებნა</li>}
+            {filtered.length === 0 && <li className="city-empty">{t('checkout.cityNotFound')}</li>}
           </ul>
         </div>
       )}

@@ -9,6 +9,11 @@ const {
   withComputedFields,
 } = require('../services/productStats');
 const { getBestSellers, getRecommendations } = require('../services/recommendationService');
+const { normalizeVariantConfig } = require('../services/productVariants');
+const { normalizeTranslations, PRODUCT_TRANSLATION_FIELDS } = require('../utils/translations');
+const { buildProductSearchFilter, localizedNameExpr, collationFor } = require('../utils/productSearch');
+const { requestLanguage } = require('../utils/requestLanguage');
+const Category = require('../models/Category');
 
 const slugify = (str) => {
   const slug = str
@@ -25,8 +30,9 @@ const slugify = (str) => {
 // ფასით სორტირება იყენებს `price`-ს — ეს უკვე საბოლოო (ფასდაკლებული) ფასია, oldPrice კი თავდაპირველი.
 const SORTS = {
   newest: { createdAt: -1, _id: -1 },
-  name_asc: { name: 1, _id: 1 },
-  name_desc: { name: -1, _id: 1 },
+  // სახელი — მოთხოვნის ენაზე (sortName, იხ. getProducts)
+  name_asc: { sortName: 1, _id: 1 },
+  name_desc: { sortName: -1, _id: 1 },
   price_asc: { price: 1, _id: 1 },
   price_desc: { price: -1, _id: 1 },
   discount_desc: { discountPercent: -1, price: 1, _id: 1 },
@@ -51,7 +57,7 @@ const getProducts = asyncHandler(async (req, res) => {
     if (category.match(/^[0-9a-fA-F]{24}$/)) {
       filter.category = new mongoose.Types.ObjectId(category);
     } else {
-      const foundCat = await require('../models/Category').findOne({ slug: category });
+      const foundCat = await Category.findOne({ slug: category });
       if (foundCat) {
         filter.category = foundCat._id;
       } else {
@@ -60,11 +66,10 @@ const getProducts = asyncHandler(async (req, res) => {
     }
   }
 
+  // ძიება სამივე ენაზე (სახელი, აღწერა, მახასიათებლები, კატეგორია) + ენებს შორის სინონიმები
   if (search) {
-    filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } }
-    ];
+    const searchFilter = await buildProductSearchFilter(search, Category);
+    if (searchFilter) Object.assign(filter, searchFilter);
   }
 
   if (inStock !== undefined && inStock !== '') {
@@ -88,18 +93,21 @@ const getProducts = asyncHandler(async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
 
   // aggregate, რომ ფასდაკლების პროცენტით სორტირება შესაძლებელი იყოს;
-  // collation — სახელით სორტირება რეგისტრის გათვალისწინების გარეშე
+  // სახელით სორტირება — არჩეული ენის სახელით (fallback ქართული), ენის collation-ით, რეგისტრის გარეშე
+  const lng = requestLanguage(req);
   const [products, total] = await Promise.all([
     Product.aggregate([
       { $match: filter },
       computedFieldsStage(now),
+      { $addFields: { sortName: localizedNameExpr(lng) } },
       { $sort: SORTS[sort] || SORTS.newest },
       { $skip: skip },
       { $limit: limitNum },
-    ]).collation({ locale: 'en', strength: 2 }),
+      { $project: { sortName: 0 } },
+    ]).collation(collationFor(lng)),
     Product.countDocuments(filter),
   ]);
-  await Product.populate(products, { path: 'category', select: 'name slug' });
+  await Product.populate(products, { path: 'category', select: 'name slug translations' });
 
   res.json({
     products,
@@ -143,7 +151,7 @@ const getProductById = asyncHandler(async (req, res) => {
   } else {
     query = { slug: req.params.id };
   }
-  const product = await Product.findOne(query).populate('category', 'name slug');
+  const product = await Product.findOne(query).populate('category', 'name slug translations');
   if (!product) {
     res.status(404);
     throw new Error('პროდუქტი ვერ მოიძებნა');
@@ -156,8 +164,11 @@ const getProductById = asyncHandler(async (req, res) => {
 // @access  Private/Admin
 const createProduct = asyncHandler(async (req, res) => {
   const { name, description, price, oldPrice, onSale, specifications, image, images, category, inStock } = req.body;
+  // ოფციები/ვარიანტები არასავალდებულოა; ვარიანტიან პროდუქტზე ფასი/მარაგი ვარიანტებიდან ითვლება
+  const config = normalizeVariantConfig({ options: req.body.options, variants: req.body.variants });
+  const hasVariants = config.variants.length > 0;
 
-  if (!name || price === undefined || !category) {
+  if (!name || (!hasVariants && (price === undefined || price === '')) || !category) {
     res.status(400);
     throw new Error('სახელი, ფასი და კატეგორია სავალდებულოა');
   }
@@ -165,10 +176,13 @@ const createProduct = asyncHandler(async (req, res) => {
   const product = await Product.create({
     name,
     description,
-    price,
+    price: hasVariants ? 0 : price, // ვარიანტიანზე გადაიწერება pre-save-ში
     oldPrice: oldPrice !== undefined ? oldPrice : null,
     onSale: onSale !== undefined ? onSale : false,
     specifications: specifications || [],
+    translations: normalizeTranslations(req.body.translations, PRODUCT_TRANSLATION_FIELDS),
+    options: config.options,
+    variants: config.variants,
     image,
     images: images || [],
     category,
@@ -176,7 +190,7 @@ const createProduct = asyncHandler(async (req, res) => {
     slug: `${slugify(name)}-${Date.now().toString(36)}`,
   });
 
-  res.status(201).json(product);
+  res.status(201).json(withComputedFields(product.toObject()));
 });
 
 // @desc    პროდუქტის განახლება
@@ -201,9 +215,25 @@ const updateProduct = asyncHandler(async (req, res) => {
   if (category !== undefined) product.category = category;
   if (inStock !== undefined) product.inStock = inStock;
   if (isActive !== undefined) product.isActive = isActive;
+  if (req.body.translations !== undefined) {
+    product.translations = normalizeTranslations(req.body.translations, PRODUCT_TRANSLATION_FIELDS);
+    product.markModified('translations');
+  }
+
+  // ოფციები/ვარიანტები — თუ რომელიმე გამოგზავნილია, ვალიდაცია სრულ კონფიგურაციაზე.
+  // ისტორიული შეკვეთები არ ზიანდება: ისინი ინახავს საკუთარ snapshot-ს (სახელი, ოფციები, ფასი).
+  if (req.body.options !== undefined || req.body.variants !== undefined) {
+    const current = product.toObject();
+    const config = normalizeVariantConfig({
+      options: req.body.options !== undefined ? req.body.options : current.options,
+      variants: req.body.variants !== undefined ? req.body.variants : current.variants,
+    });
+    product.options = config.options;
+    product.variants = config.variants;
+  }
 
   const updated = await product.save();
-  res.json(updated);
+  res.json(withComputedFields(updated.toObject()));
 });
 
 // @desc    პროდუქტის წაშლა

@@ -4,8 +4,13 @@ import api from '../api/axios';
 import CategoriesSidebar from '../components/CategoriesSidebar';
 import ProductListing, { DEFAULT_SORT, normalizeSort } from '../components/ProductListing';
 import Icon from '../components/Icon';
+import { useTranslation } from 'react-i18next';
+import { useLocalized } from '../i18n/content';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 const CategoryPage = () => {
+  const { t } = useTranslation();
+  const L = useLocalized();
   const { id } = useParams();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -38,15 +43,18 @@ const CategoryPage = () => {
   const setSort = (s) => updateParams({ sort: s, page: null });
   const discounted = params.get('discounted') === '1';
   const setDiscounted = (on) => updateParams({ discounted: on ? '1' : null, page: null });
+  const name = category ? L(category, 'name') : '';
+  const description = category ? L(category, 'description') : '';
+  useDocumentMeta(name || t('nav.catalog'), description || undefined);
 
   return (
     <div className="container page">
-      <nav className="breadcrumb" aria-label="breadcrumb">
-        <Link to="/">მთავარი</Link>
+      <nav className="breadcrumb" aria-label={t('common.breadcrumb')}>
+        <Link to="/">{t('nav.home')}</Link>
         <Icon name="chevronRight" size={14} />
-        <Link to="/products">კატალოგი</Link>
+        <Link to="/products">{t('nav.catalog')}</Link>
         <Icon name="chevronRight" size={14} />
-        <span className="current">{category?.name || '...'}</span>
+        <span className="current">{name || '...'}</span>
       </nav>
 
       <div className="catalog">
@@ -62,16 +70,16 @@ const CategoryPage = () => {
           onPageChange={setPage}
           header={(total) => (
             <>
-              <h1>{category ? category.name : <span className="skeleton" style={{ display: 'inline-block', width: 180, height: 28 }} />}</h1>
-              {total !== null && <span className="count">{total} პროდუქტი</span>}
-              {category?.description && <p className="catalog-desc">{category.description}</p>}
+              <h1>{category ? name : <span className="skeleton" style={{ display: 'inline-block', width: 180, height: 28 }} />}</h1>
+              {total !== null && <span className="count">{t('common.productCount', { count: total })}</span>}
+              {description && <p className="catalog-desc">{description}</p>}
             </>
           )}
-          emptyTitle="კატეგორია ცარიელია"
-          emptyText="ამ კატეგორიაში პროდუქტები ჯერ არ არის."
+          emptyTitle={t('catalog.emptyCategoryTitle')}
+          emptyText={t('catalog.emptyCategoryText')}
           emptyAction={
             <Link to="/products" className="btn">
-              ყველა პროდუქტის ნახვა
+              {t('catalog.viewAllProducts')}
             </Link>
           }
         />

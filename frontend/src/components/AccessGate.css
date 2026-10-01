@@ -362,3 +362,11 @@
     white-space: normal;
   }
 }
+
+/* ენის არჩევა წვდომის გვერდზე */
+.dev-access-lang {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}

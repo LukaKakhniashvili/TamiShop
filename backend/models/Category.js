@@ -5,6 +5,8 @@ const categorySchema = new mongoose.Schema(
     name: { type: String, required: true, unique: true, trim: true },
     slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
     description: { type: String, default: '' },
+    // არასავალდებულო თარგმანები { en: { name, description }, ru: {...} }; fallback — ქართული
+    translations: { type: mongoose.Schema.Types.Mixed, default: undefined },
     order: { type: Number, default: 0 },
     isActive: { type: Boolean, default: true },
   },

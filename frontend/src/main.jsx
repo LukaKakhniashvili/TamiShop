@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import { UIProvider } from "./context/UIContext.jsx";
 import "./index.css";
+import "./i18n"; // მრავალენოვნება — ინიციალიზაცია რენდერამდე
 import AccessGate from "./components/AccessGate.jsx";
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";

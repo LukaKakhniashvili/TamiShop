@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import api from '../api/axios';
+import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
+import { useLocalized } from '../i18n/content';
 
 const iconRules = [
   [['მობილურ', 'ტელეფონ', 'phone'], 'smartphone'],
@@ -31,6 +33,8 @@ export const getCategoryIcon = (name) => {
 let cache = null;
 
 const CategoriesSidebar = () => {
+  const { t } = useTranslation();
+  const L = useLocalized();
   const [categories, setCategories] = useState(cache || []);
   const [loading, setLoading] = useState(!cache);
 
@@ -49,13 +53,13 @@ const CategoriesSidebar = () => {
 
   return (
     <aside className="cat-nav">
-      <div className="cat-nav-title">კატეგორიები</div>
+      <div className="cat-nav-title">{t('catalog.categories')}</div>
       <nav className="cat-list">
         <NavLink to="/products" end className={itemClass}>
           <span className="cat-icon">
             <Icon name="grid" size={17} />
           </span>
-          <span>ყველა</span>
+          <span>{t('catalog.all')}</span>
         </NavLink>
 
         {loading
@@ -65,7 +69,7 @@ const CategoriesSidebar = () => {
                 <span className="cat-icon">
                   <Icon name={getCategoryIcon(cat.name)} size={17} />
                 </span>
-                <span>{cat.name}</span>
+                <span>{L(cat, 'name')}</span>
               </NavLink>
             ))}
       </nav>

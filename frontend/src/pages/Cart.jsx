@@ -1,15 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
+import { useLocalized } from '../i18n/content';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 import Icon from '../components/Icon';
+import LineOptions from '../components/LineOptions';
 import { EmptyState, QuantityStepper, formatPrice } from '../components/ui';
 
 const Cart = () => {
+  const { t } = useTranslation();
+  const L = useLocalized();
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [removing, setRemoving] = useState(null);
+  useDocumentMeta(t('cart.title'));
 
   const handleCheckout = () => {
     if (!user) {
@@ -19,10 +26,10 @@ const Cart = () => {
     navigate('/checkout');
   };
 
-  const handleRemove = (productId) => {
-    setRemoving(productId);
+  const handleRemove = (lineId) => {
+    setRemoving(lineId);
     setTimeout(() => {
-      removeFromCart(productId);
+      removeFromCart(lineId);
       setRemoving(null);
     }, 250);
   };
@@ -30,9 +37,9 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <div className="container page">
-        <EmptyState icon="cart" title="კალათა ცარიელია" text="როგორც ჩანს, ჯერ არაფერი დაგიმატებიათ. დაათვალიერე პროდუქტები და იპოვე შენთვის სასურველი.">
+        <EmptyState icon="cart" title={t('cart.emptyTitle')} text={t('cart.emptyText')}>
           <Link to="/" className="btn btn-primary btn-lg">
-            <Icon name="arrowLeft" size={18} /> მაღაზიაში დაბრუნება
+            <Icon name="arrowLeft" size={18} /> {t('common.backToShop')}
           </Link>
         </EmptyState>
       </div>
@@ -43,61 +50,70 @@ const Cart = () => {
     <div className="container page">
       <div className="page-header">
         <div>
-          <h1 className="page-title">კალათა</h1>
-          <p className="page-subtitle">{totalItems} ნივთი თქვენს კალათაში</p>
+          <h1 className="page-title">{t('cart.title')}</h1>
+          <p className="page-subtitle">{t('cart.itemsInCart', { count: totalItems })}</p>
         </div>
         <Link to="/products" className="btn btn-ghost btn-sm">
-          <Icon name="arrowLeft" size={16} /> ყიდვის გაგრძელება
+          <Icon name="arrowLeft" size={16} /> {t('cart.continueShopping')}
         </Link>
       </div>
 
       <div className="split">
         <div className="card card-pad">
           <div className="cart-items">
-            {items.map((item) => (
-              <div className={`cart-row ${removing === item.productId ? 'removing' : ''}`} key={item.productId}>
-                <Link to={`/product/${item.slug || item.productId}`} className="cart-row-img">
-                  <img src={item.image || 'https://placehold.co/100x100'} alt={item.name} />
-                </Link>
-                <div className="cart-row-info">
-                  <Link to={`/product/${item.slug || item.productId}`} className="cart-row-name">
-                    {item.name}
+            {items.map((item) => {
+              const name = L(item, 'name');
+              return (
+                <div className={`cart-row ${removing === item.lineId ? 'removing' : ''}`} key={item.lineId}>
+                  <Link to={`/product/${item.slug || item.productId}`} className="cart-row-img">
+                    <img src={item.image || 'https://placehold.co/100x100'} alt={name} />
                   </Link>
-                  <span className="cart-row-unit">{formatPrice(item.price)} / ცალი</span>
-                  <div className="cart-row-controls">
-                    <QuantityStepper size="sm" value={item.quantity} onChange={(q) => updateQuantity(item.productId, q)} />
-                    <button className="remove-btn" onClick={() => handleRemove(item.productId)}>
-                      <Icon name="trash" size={15} /> წაშლა
-                    </button>
+                  <div className="cart-row-info">
+                    <Link to={`/product/${item.slug || item.productId}`} className="cart-row-name">
+                      {name}
+                    </Link>
+                    <LineOptions options={item.options} />
+                    <span className="cart-row-unit">{t('cart.perUnit', { price: formatPrice(item.price) })}</span>
+                    <div className="cart-row-controls">
+                      <QuantityStepper
+                        size="sm"
+                        value={item.quantity}
+                        max={item.maxQuantity || 99}
+                        onChange={(q) => updateQuantity(item.lineId, q)}
+                      />
+                      <button className="remove-btn" onClick={() => handleRemove(item.lineId)}>
+                        <Icon name="trash" size={15} /> {t('cart.remove')}
+                      </button>
+                    </div>
                   </div>
+                  <span className="cart-row-total">{formatPrice(item.price * item.quantity)}</span>
                 </div>
-                <span className="cart-row-total">{formatPrice(item.price * item.quantity)}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
         <aside className="card card-pad summary">
-          <h2 className="card-title">შეკვეთის შეჯამება</h2>
+          <h2 className="card-title">{t('cart.summary')}</h2>
           <div className="free-ship done">
-            <Icon name="truck" size={16} /> უფასო მიწოდება მთელ საქართველოში · 2–6 სამუშაო დღე
+            <Icon name="truck" size={16} /> {t('cart.freeShipping')}
           </div>
           <div className="summary-row">
-            <span>ნივთები ({totalItems})</span>
+            <span>{t('cart.items', { count: totalItems })}</span>
             <strong>{formatPrice(totalPrice)}</strong>
           </div>
           <div className="summary-row">
-            <span>მიწოდება</span>
-            <strong className="free">უფასო</strong>
+            <span>{t('cart.delivery')}</span>
+            <strong className="free">{t('common.free')}</strong>
           </div>
           <div className="summary-total">
-            <span>ჯამი</span>
+            <span>{t('cart.total')}</span>
             <strong>{formatPrice(totalPrice)}</strong>
           </div>
           <button className="btn btn-primary btn-lg btn-block" onClick={handleCheckout}>
-            შეკვეთის გაფორმება <Icon name="arrowRight" size={18} />
+            {t('cart.checkout')} <Icon name="arrowRight" size={18} />
           </button>
-          {!user && <p className="summary-note">გასაგრძელებლად საჭიროა ავტორიზაცია</p>}
+          {!user && <p className="summary-note">{t('cart.loginRequired')}</p>}
         </aside>
       </div>
     </div>

@@ -1,8 +1,11 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "./LanguageSwitcher";
 import api from "../api/axios";
 import "./AccessGate.css";
 
 const AccessGate = ({ children }) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -13,7 +16,7 @@ const AccessGate = ({ children }) => {
     e.preventDefault();
 
     if (!code.trim()) {
-      setError("გთხოვთ, შეიყვანოთ წვდომის კოდი");
+      setError(t("accessGate.required"));
       return;
     }
 
@@ -29,7 +32,7 @@ const AccessGate = ({ children }) => {
 
       window.location.reload();
     } catch (err) {
-      setError("წვდომის კოდი არასწორია");
+      setError(t("accessGate.invalid"));
     } finally {
       setLoading(false);
     }
@@ -63,12 +66,16 @@ const AccessGate = ({ children }) => {
           </svg>
         </div>
 
-        <h1>Development Environment</h1>
+        <div className="dev-access-lang">
+          <LanguageSwitcher />
+        </div>
+
+        <h1>{t("accessGate.title")}</h1>
 
         <p className="dev-access-description">
-          ეს არის სატესტო გარემო (DEV).
+          {t("accessGate.line1")}
           <br />
-          გასაგრძელებლად შეიყვანეთ Access Code.
+          {t("accessGate.line2")}
         </p>
 
         {/* Access Code */}
@@ -95,7 +102,8 @@ const AccessGate = ({ children }) => {
                 setError("");
               }
             }}
-            placeholder="Access Code"
+            placeholder={t("accessGate.placeholder")}
+            aria-label={t("accessGate.placeholder")}
             autoFocus
             autoComplete="off"
           />
@@ -112,7 +120,7 @@ const AccessGate = ({ children }) => {
 
         {/* Button */}
         <button className="dev-access-button" type="submit" disabled={loading}>
-          {loading ? "მოწმდება..." : "შესვლა →"}
+          {loading ? t("accessGate.checking") : `${t("accessGate.submit")} →`}
         </button>
 
         {/* Footer */}
@@ -128,7 +136,7 @@ const AccessGate = ({ children }) => {
               <path d="M9 10V7a3 3 0 0 1 6 0v3" />
             </svg>
 
-            <span>Restricted Development Access</span>
+            <span>{t("accessGate.footer")}</span>
           </div>
         </div>
       </form>

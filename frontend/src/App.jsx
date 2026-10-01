@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import useDocumentMeta from './hooks/useDocumentMeta';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -21,16 +23,20 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
 
-const NotFound = () => (
-  <div className="container notfound">
-    <div className="code">404</div>
-    <h1>გვერდი ვერ მოიძებნა</h1>
-    <p>გვერდი, რომელსაც ეძებთ, არ არსებობს ან გადატანილია.</p>
-    <Link to="/" className="btn btn-primary btn-lg">
-      მთავარ გვერდზე დაბრუნება
-    </Link>
-  </div>
-);
+const NotFound = () => {
+  const { t } = useTranslation();
+  useDocumentMeta(t('notFound.title'));
+  return (
+    <div className="container notfound">
+      <div className="code">404</div>
+      <h1>{t('notFound.title')}</h1>
+      <p>{t('notFound.text')}</p>
+      <Link to="/" className="btn btn-primary btn-lg">
+        {t('notFound.back')}
+      </Link>
+    </div>
+  );
+};
 
 // Scroll to top on page change (but not on query-only changes like ?page=2, which lists handle themselves)
 const useScrollToTop = (pathname) => {

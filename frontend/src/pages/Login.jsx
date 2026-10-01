@@ -1,12 +1,16 @@
 import { GoogleLogin } from '@react-oauth/google';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/UIContext';
 import Icon from '../components/Icon';
 import { Alert, Field, IconInput, PasswordInput } from '../components/ui';
+import { apiErrorMessage } from '../i18n/errors';
+import useDocumentMeta from '../hooks/useDocumentMeta';
 
 const Login = () => {
+  const { t, i18n } = useTranslation();
   const { loginWithGoogle, login: authLogin } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -19,9 +23,10 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const redirectTo = location.state?.from || '/';
+  useDocumentMeta(t('auth.login.metaTitle'));
 
   const onLoggedIn = (user) => {
-    toast({ title: `მოგესალმებით${user?.firstName ? `, ${user.firstName}` : ''}!` });
+    toast({ title: user?.firstName ? t('auth.login.welcomeName', { name: user.firstName }) : t('auth.login.welcome') });
     navigate(redirectTo, { replace: true });
   };
 
@@ -29,7 +34,7 @@ const Login = () => {
     try {
       onLoggedIn(await loginWithGoogle(credentialResponse.credential));
     } catch (err) {
-      setError(err.response?.data?.message || 'Google ავტორიზაცია ვერ მოხერხდა. სცადეთ თავიდან.');
+      setError(apiErrorMessage(err, 'auth.login.googleFailed'));
     }
   };
 
@@ -40,7 +45,7 @@ const Login = () => {
     try {
       onLoggedIn(await authLogin(email, password));
     } catch (err) {
-      setError(err.response?.data?.message || 'ავტორიზაცია ვერ მოხერხდა. ელ. ფოსტა ან პაროლი არასწორია.');
+      setError(apiErrorMessage(err, 'auth.login.failed'));
     } finally {
       setSubmitting(false);
     }
@@ -53,14 +58,14 @@ const Login = () => {
           <div className="brand-mark">
             <Icon name="user" size={22} />
           </div>
-          <h1>კეთილი იყოს თქვენი დაბრუნება</h1>
-          <p>შედით თქვენს პირად პროფილში</p>
+          <h1>{t('auth.login.title')}</h1>
+          <p>{t('auth.login.subtitle')}</p>
         </div>
 
         <div className="form-stack">
           <Alert>{error}</Alert>
 
-          <Field label="ელ. ფოსტა">
+          <Field label={t('auth.email')}>
             <IconInput
               icon="mail"
               type="email"
@@ -74,7 +79,7 @@ const Login = () => {
             />
           </Field>
 
-          <Field label="პაროლი">
+          <Field label={t('auth.password')}>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -88,32 +93,37 @@ const Login = () => {
           <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={submitting}>
             {submitting ? (
               <>
-                <span className="spinner" /> შესვლა...
+                <span className="spinner" /> {t('auth.login.submitting')}
               </>
             ) : (
               <>
-                შესვლა <Icon name="arrowRight" size={18} />
+                {t('auth.login.submit')} <Icon name="arrowRight" size={18} />
               </>
             )}
           </button>
         </div>
 
-        <div className="or-divider">ან</div>
+        <div className="or-divider">{t('auth.or')}</div>
 
         <div className="google-wrap">
-          <GoogleLogin onSuccess={handleGoogleSuccess} onError={() => setError('Google ავტორიზაცია ვერ მოხერხდა')} shape="pill" />
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError(t('auth.login.googleFailed'))}
+            shape="pill"
+            locale={i18n.language}
+          />
         </div>
 
         <p className="auth-foot">
-          ჯერ არ გაქვთ ანგარიში?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/register" state={location.state} className="link">
-            რეგისტრაცია
+            {t('auth.register.link')}
           </Link>
         </p>
         <p className="auth-foot auth-foot-secondary">
-          ვერ შედიხართ ანგარიშზე?{' '}
+          {t('auth.login.cantSignIn')}{' '}
           <Link to="/forgot-password" className="link">
-            ანგარიშის აღდგენა
+            {t('auth.login.recover')}
           </Link>
         </p>
       </form>

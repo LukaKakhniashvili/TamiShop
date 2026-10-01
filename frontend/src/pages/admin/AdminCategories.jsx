@@ -3,6 +3,9 @@ import api from '../../api/axios';
 import Icon from '../../components/Icon';
 import { useConfirm, useToast } from '../../context/UIContext';
 import { Alert, Field, Loader, Tabs } from '../../components/ui';
+import { CategoryContentEditor, TranslationsHint } from '../../components/admin/TranslationsEditor';
+
+const emptyForm = { name: '', description: '', translations: {} };
 
 const AdminCategories = () => {
   const toast = useToast();
@@ -11,9 +14,10 @@ const AdminCategories = () => {
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'form'
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [form, setForm] = useState(emptyForm);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [contentLang, setContentLang] = useState('ka');
 
   const [draggedIndex, setDraggedIndex] = useState(null);
   const [overIndex, setOverIndex] = useState(null);
@@ -34,17 +38,22 @@ const AdminCategories = () => {
     loadData();
   }, []);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const resetForm = () => {
-    setForm({ name: '', description: '' });
+    setForm(emptyForm);
     setEditingId(null);
     setError('');
+    setContentLang('ka');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!form.name.trim()) {
+      setContentLang('ka');
+      setError('შეიყვანეთ კატეგორიის სახელი (ქართულად)');
+      return;
+    }
     setSaving(true);
     try {
       if (editingId) {
@@ -67,7 +76,8 @@ const AdminCategories = () => {
   const handleEdit = (category) => {
     setEditingId(category._id);
     setError('');
-    setForm({ name: category.name, description: category.description || '' });
+    setContentLang('ka');
+    setForm({ name: category.name, description: category.description || '', translations: category.translations || {} });
     setActiveTab('form');
   };
 
@@ -224,12 +234,8 @@ const AdminCategories = () => {
             {editingId ? 'კატეგორიის რედაქტირება' : 'ახალი კატეგორია'}
           </h2>
           <Alert>{error}</Alert>
-          <Field label="სახელი" required>
-            <input className="input" name="name" value={form.name} onChange={handleChange} required autoFocus />
-          </Field>
-          <Field label="აღწერა">
-            <textarea className="textarea" name="description" value={form.description} onChange={handleChange} rows={3} />
-          </Field>
+          <TranslationsHint />
+          <CategoryContentEditor form={form} setForm={setForm} lang={contentLang} onLangChange={setContentLang} />
 
           <div className="form-actions">
             <button className="btn btn-primary" type="submit" disabled={saving}>

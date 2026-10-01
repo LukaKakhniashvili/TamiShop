@@ -16,46 +16,82 @@ const categories = [
     slug: 'electronics',
     name: 'ელექტრონიკა',
     description: 'სმარტფონები, პლანშეტები, ყურსასმენები და ჭკვიანი მოწყობილობები წამყვანი ბრენდებისგან.',
+    translations: {
+      en: { name: 'Electronics', description: 'Smartphones, tablets, headphones and smart devices from leading brands.' },
+      ru: { name: 'Электроника', description: 'Смартфоны, планшеты, наушники и умные устройства ведущих брендов.' },
+    },
   },
   {
     slug: 'computers',
     name: 'კომპიუტერები და ლეპტოპები',
     description: 'ლეპტოპები სამუშაოდ, სწავლისა და შემოქმედებისთვის — ულტრაბუქებიდან მძლავრ სამუშაო სადგურებამდე.',
+    translations: {
+      en: { name: 'Computers & Laptops', description: 'Laptops for work, study and creativity — from ultrabooks to powerful workstations.' },
+      ru: { name: 'Компьютеры и ноутбуки', description: 'Ноутбуки для работы, учёбы и творчества — от ультрабуков до мощных рабочих станций.' },
+    },
   },
   {
     slug: 'apparel',
     name: 'სამოსი',
     description: 'მამაკაცისა და ქალის სამოსი ყოველდღიური და საღამოს სტილისთვის.',
+    translations: {
+      en: { name: 'Clothing', description: 'Men’s and women’s clothing for everyday and evening style.' },
+      ru: { name: 'Одежда', description: 'Мужская и женская одежда для повседневного и вечернего стиля.' },
+    },
   },
   {
     slug: 'shoes',
     name: 'ფეხსაცმელი',
     description: 'სპორტული ფეხსაცმელი, სნიკერები და ელეგანტური ქალის ფეხსაცმელი.',
+    translations: {
+      en: { name: 'Shoes', description: 'Sports shoes, sneakers and elegant women’s shoes.' },
+      ru: { name: 'Обувь', description: 'Спортивная обувь, кроссовки и элегантная женская обувь.' },
+    },
   },
   {
     slug: 'accessories',
     name: 'აქსესუარები და საათები',
     description: 'მაჯის საათები, ჩანთები, ზურგჩანთები და მზის სათვალეები.',
+    translations: {
+      en: { name: 'Accessories & Watches', description: 'Wristwatches, bags, backpacks and sunglasses.' },
+      ru: { name: 'Аксессуары и часы', description: 'Наручные часы, сумки, рюкзаки и солнцезащитные очки.' },
+    },
   },
   {
     slug: 'home-and-garden',
     name: 'სახლი და ბაღი',
     description: 'ავეჯი, განათება, დეკორი და მცენარეები მყუდრო სახლისთვის.',
+    translations: {
+      en: { name: 'Home & Garden', description: 'Furniture, lighting, decor and plants for a cozy home.' },
+      ru: { name: 'Дом и сад', description: 'Мебель, освещение, декор и растения для уютного дома.' },
+    },
   },
   {
     slug: 'kitchen',
     name: 'სამზარეულო',
     description: 'სამზარეულოს ტექნიკა, ჭურჭელი და ხელსაწყოები ყოველდღიური მზარეულობისთვის.',
+    translations: {
+      en: { name: 'Kitchen', description: 'Kitchen appliances, cookware and tools for everyday cooking.' },
+      ru: { name: 'Кухня', description: 'Кухонная техника, посуда и инструменты для повседневной готовки.' },
+    },
   },
   {
     slug: 'beauty',
     name: 'სილამაზე და მოვლა',
     description: 'სუნამოები, დეკორატიული კოსმეტიკა და სხეულის მოვლის საშუალებები.',
+    translations: {
+      en: { name: 'Beauty & Care', description: 'Perfumes, makeup and body care products.' },
+      ru: { name: 'Красота и уход', description: 'Парфюмерия, декоративная косметика и средства для ухода за телом.' },
+    },
   },
   {
     slug: 'sports',
     name: 'სპორტი და დასვენება',
     description: 'ბურთები, ჩოგნები და ინვენტარი გუნდური და ინდივიდუალური სპორტისთვის.',
+    translations: {
+      en: { name: 'Sports & Leisure', description: 'Balls, rackets and equipment for team and individual sports.' },
+      ru: { name: 'Спорт и отдых', description: 'Мячи, ракетки и инвентарь для командных и индивидуальных видов спорта.' },
+    },
   },
 ];
 

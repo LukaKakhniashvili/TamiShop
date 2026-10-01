@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
+const httpError = require('../utils/httpError');
 
 // იცავს route-ებს - მოითხოვს ვალიდურ JWT ტოკენს
 const protect = asyncHandler(async (req, res, next) => {
@@ -12,8 +13,7 @@ const protect = asyncHandler(async (req, res, next) => {
   }
 
   if (!token) {
-    res.status(401);
-    throw new Error('არაავტორიზებული წვდომა - ტოკენი არ მოიძებნა');
+    throw httpError(401, 'არაავტორიზებული წვდომა - ტოკენი არ მოიძებნა', { code: 'UNAUTHORIZED' });
   }
 
   try {
@@ -29,8 +29,7 @@ const protect = asyncHandler(async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    res.status(401);
-    throw new Error('არაავტორიზებული წვდომა - ტოკენი არავალიდურია');
+    throw httpError(401, 'არაავტორიზებული წვდომა - ტოკენი არავალიდურია', { code: 'UNAUTHORIZED' });
   }
 });
 

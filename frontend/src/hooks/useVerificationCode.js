@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../api/axios';
+import { apiErrorMessage } from '../i18n/errors';
 
 /*
  * ერთჯერადი კოდის ნაკადის საერთო ლოგიკა (რეგისტრაცია, პაროლის აღდგენა):
@@ -129,7 +130,7 @@ const useVerificationCode = ({ sendUrl, statusUrl, storageKey, done = false, onR
         const wait = Number(data?.resendAvailableInSeconds || err.response.headers?.['retry-after']) || DEFAULT_RESEND_SECONDS;
         applyTimers({ resendAvailableInSeconds: wait });
       }
-      return { ok: false, status: err.response?.status, data, error: data?.message || 'კოდის გაგზავნა ვერ მოხერხდა. სცადეთ თავიდან.' };
+      return { ok: false, status: err.response?.status, data, error: apiErrorMessage(err, 'otp.sendFailed') };
     } finally {
       setSending(null);
     }

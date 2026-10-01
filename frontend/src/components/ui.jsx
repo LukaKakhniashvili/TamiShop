@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import Icon from './Icon';
 
 export const formatPrice = (value) =>
@@ -23,12 +24,15 @@ export const productDiscount = (p) => {
     : 0;
 };
 
-export const Loader = ({ label = 'იტვირთება...' }) => (
-  <div className="loader">
-    <div className="spinner" />
-    <span>{label}</span>
-  </div>
-);
+export const Loader = ({ label }) => {
+  const { t } = useTranslation();
+  return (
+    <div className="loader">
+      <div className="spinner" />
+      <span>{label || t('common.loading')}</span>
+    </div>
+  );
+};
 
 export const EmptyState = ({ icon = 'box', title, text, children }) => (
   <div className="empty-state">
@@ -41,27 +45,30 @@ export const EmptyState = ({ icon = 'box', title, text, children }) => (
   </div>
 );
 
-export const QuantityStepper = ({ value, onChange, min = 1, max = 99, size }) => (
-  <div className={`stepper ${size === 'sm' ? 'sm' : ''}`}>
-    <button type="button" onClick={() => onChange(value - 1)} disabled={value <= min} aria-label="შემცირება">
-      <Icon name="minus" size={16} strokeWidth={2.5} />
-    </button>
-    <input
-      type="number"
-      value={value}
-      min={min}
-      max={max}
-      aria-label="რაოდენობა"
-      onChange={(e) => {
-        const n = Number(e.target.value);
-        if (!Number.isNaN(n)) onChange(Math.min(max, Math.max(min, n)));
-      }}
-    />
-    <button type="button" onClick={() => onChange(value + 1)} disabled={value >= max} aria-label="გაზრდა">
-      <Icon name="plus" size={16} strokeWidth={2.5} />
-    </button>
-  </div>
-);
+export const QuantityStepper = ({ value, onChange, min = 1, max = 99, size }) => {
+  const { t } = useTranslation();
+  return (
+    <div className={`stepper ${size === 'sm' ? 'sm' : ''}`}>
+      <button type="button" onClick={() => onChange(value - 1)} disabled={value <= min} aria-label={t('common.decrease')}>
+        <Icon name="minus" size={16} strokeWidth={2.5} />
+      </button>
+      <input
+        type="number"
+        value={value}
+        min={min}
+        max={max}
+        aria-label={t('common.quantity')}
+        onChange={(e) => {
+          const n = Number(e.target.value);
+          if (!Number.isNaN(n)) onChange(Math.min(max, Math.max(min, n)));
+        }}
+      />
+      <button type="button" onClick={() => onChange(value + 1)} disabled={value >= max} aria-label={t('common.increase')}>
+        <Icon name="plus" size={16} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+};
 
 const pageList = (page, total) => {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
@@ -76,10 +83,11 @@ const pageList = (page, total) => {
 };
 
 export const Pagination = ({ page, totalPages, onChange }) => {
+  const { t } = useTranslation();
   if (totalPages <= 1) return null;
   return (
-    <nav className="pagination" aria-label="გვერდები">
-      <button className="page-btn" disabled={page === 1} onClick={() => onChange(page - 1)} aria-label="წინა">
+    <nav className="pagination" aria-label={t('common.pages')}>
+      <button className="page-btn" disabled={page === 1} onClick={() => onChange(page - 1)} aria-label={t('common.previous')}>
         <Icon name="chevronLeft" size={18} />
       </button>
       {pageList(page, totalPages).map((p) =>
@@ -96,7 +104,7 @@ export const Pagination = ({ page, totalPages, onChange }) => {
           </button>
         )
       )}
-      <button className="page-btn" disabled={page === totalPages} onClick={() => onChange(page + 1)} aria-label="შემდეგი">
+      <button className="page-btn" disabled={page === totalPages} onClick={() => onChange(page + 1)} aria-label={t('common.next')}>
         <Icon name="chevronRight" size={18} />
       </button>
     </nav>
@@ -123,6 +131,7 @@ export const ProductGridSkeleton = ({ count = 8 }) => (
 );
 
 export const PasswordInput = ({ className = '', ...props }) => {
+  const { t } = useTranslation();
   const [show, setShow] = useState(false);
   return (
     <div className="input-group has-action">
@@ -134,7 +143,7 @@ export const PasswordInput = ({ className = '', ...props }) => {
         type="button"
         className="input-action"
         onClick={() => setShow((s) => !s)}
-        aria-label={show ? 'პაროლის დამალვა' : 'პაროლის ჩვენება'}
+        aria-label={show ? t('common.hidePassword') : t('common.showPassword')}
         tabIndex={-1}
       >
         <Icon name={show ? 'eyeOff' : 'eye'} size={18} />

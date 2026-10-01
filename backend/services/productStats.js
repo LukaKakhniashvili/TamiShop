@@ -31,11 +31,32 @@ const discountPercentExpr = {
 };
 const discountPercent = (p) => (hasDiscount(p) ? Math.floor(((p.oldPrice - p.price) / p.oldPrice) * 100 + EPSILON) : 0);
 
+// ვარიანტიანი პროდუქტი: hasVariants და ფასების დიაპაზონი (აქტიური ვარიანტებიდან) — ბარათზე „-დან" ფასისთვის
+const activeVariantsExpr = {
+  $filter: { input: { $ifNull: ['$variants', []] }, as: 'v', cond: { $ne: ['$$v.isActive', false] } },
+};
+const variantFieldsExpr = {
+  hasVariants: { $gt: [{ $size: { $ifNull: ['$variants', []] } }, 0] },
+  priceMax: { $ifNull: [{ $max: { $map: { input: activeVariantsExpr, as: 'v', in: '$$v.price' } } }, '$price'] },
+};
+const variantFields = (p) => {
+  const active = (p.variants || []).filter((v) => v.isActive !== false);
+  return {
+    hasVariants: Boolean(p.variants?.length),
+    priceMax: active.length ? Math.max(...active.map((v) => v.price)) : p.price,
+  };
+};
+
 // გამოთვლილი ველები, რომლებსაც API ყველა პროდუქტს უმატებს
 const computedFieldsStage = (now = Date.now()) => ({
-  $addFields: { discountPercent: discountPercentExpr, isNew: isNewExpr(now) },
+  $addFields: { discountPercent: discountPercentExpr, isNew: isNewExpr(now), ...variantFieldsExpr },
 });
-const withComputedFields = (p, now = Date.now()) => ({ ...p, discountPercent: discountPercent(p), isNew: isNewProduct(p, now) });
+const withComputedFields = (p, now = Date.now()) => ({
+  ...p,
+  discountPercent: discountPercent(p),
+  isNew: isNewProduct(p, now),
+  ...variantFields(p),
+});
 
 /**
  * გაყიდული ერთეულები თითო პროდუქტზე (გაუქმებული შეკვეთების გარეშე).
