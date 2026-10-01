@@ -1,19 +1,6 @@
 const nodemailer = require("nodemailer");
-const { Resend } = require("resend");
+const { google } = require("googleapis");
 const { BRAND_NAME } = require("../../constants/brand");
-
-/*
- * Email delivery:
- *
- * LOCAL / SMTP:
- *   Gmail SMTP → Nodemailer
- *
- * DEV / Render:
- *   Resend HTTPS API
- *
- * EMAIL_PROVIDER=resend შემთხვევაში გამოიყენება Resend.
- * სხვა შემთხვევაში რჩება არსებული SMTP გაგზავნა.
- */
 
 const decodeEntities = (s) =>
   s
@@ -39,11 +26,11 @@ const htmlToText = (html) =>
 
 const recipientDomain = (to) => `*@${String(to).split("@")[1] || "?"}`;
 
-const useResend = () => process.env.EMAIL_PROVIDER === "resend";
+const useGmailApi = () => process.env.EMAIL_PROVIDER === "gmail_api";
 
 /*
  * -------------------------------------------------------
- * SMTP / Nodemailer
+ * SMTP — LOCAL
  * -------------------------------------------------------
  */
 
@@ -71,18 +58,30 @@ const getTransporter = () => {
 
 /*
  * -------------------------------------------------------
- * Resend
+ * Gmail API — DEV / Render
  * -------------------------------------------------------
  */
 
-let resend = null;
+let gmail = null;
 
-const getResend = () => {
-  if (!resend) {
-    resend = new Resend(process.env.RESEND_API_KEY);
+const getGmailClient = () => {
+  if (!gmail) {
+    const oauth2Client = new google.auth.OAuth2(
+      process.env.GMAIL_CLIENT_ID,
+      process.env.GMAIL_CLIENT_SECRET,
+    );
+
+    oauth2Client.setCredentials({
+      refresh_token: process.env.GMAIL_REFRESH_TOKEN,
+    });
+
+    gmail = google.gmail({
+      version: "v1",
+      auth: oauth2Client,
+    });
   }
 
-  return resend;
+  return gmail;
 };
 
 /*
@@ -105,9 +104,9 @@ const buildMessage = ({ to, subject, html, text }) => ({
  */
 
 const sendWithSmtp = async (message) => {
-  const transporter = getTransporter();
+  const t = getTransporter();
 
-  const info = await transporter.sendMail({
+  const info = await t.sendMail({
     from: {
       name: BRAND_NAME,
       address: process.env.SMTP_USER,
@@ -128,36 +127,62 @@ const sendWithSmtp = async (message) => {
 
 /*
  * -------------------------------------------------------
- * Resend sender
+ * Gmail API sender
  * -------------------------------------------------------
  */
 
-const sendWithResend = async (message) => {
-  const client = getResend();
+const sendWithGmailApi = async (message) => {
+  // Nodemailer-ს მხოლოდ MIME წერილის სწორად ასაწყობად ვიყენებთ.
+  // რეალური გაგზავნა SMTP-ით არ ხდება.
+  const rawMessage = await new Promise((resolve, reject) => {
+    const streamTransport = nodemailer.createTransport({
+      streamTransport: true,
+      buffer: true,
+      newline: "unix",
+    });
 
-  const { data, error } = await client.emails.send({
-    from: `${BRAND_NAME} <onboarding@resend.dev>`,
+    streamTransport.sendMail(
+      {
+        from: {
+          name: BRAND_NAME,
+          address: process.env.SMTP_USER,
+        },
 
-    to: [message.to],
+        ...(process.env.EMAIL_REPLY_TO
+          ? { replyTo: process.env.EMAIL_REPLY_TO }
+          : {}),
 
-    subject: message.subject,
+        ...message,
+      },
+      (error, info) => {
+        if (error) {
+          reject(error);
+          return;
+        }
 
-    html: message.html,
-
-    text: message.text,
-
-    ...(process.env.EMAIL_REPLY_TO
-      ? { replyTo: process.env.EMAIL_REPLY_TO }
-      : {}),
+        resolve(info.message);
+      },
+    );
   });
 
-  if (error) {
-    throw new Error(error.message || "Resend email delivery failed");
-  }
+  const raw = rawMessage
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  const gmailClient = getGmailClient();
+
+  const response = await gmailClient.users.messages.send({
+    userId: "me",
+    requestBody: {
+      raw,
+    },
+  });
 
   return {
     sent: true,
-    messageId: data?.id,
+    messageId: response.data.id,
   };
 };
 
@@ -174,14 +199,14 @@ const sendEmail = async ({ type = "generic", ...content }) => {
   try {
     let result;
 
-    if (useResend()) {
-      result = await sendWithResend(message);
+    if (useGmailApi()) {
+      result = await sendWithGmailApi(message);
     } else {
       result = await sendWithSmtp(message);
     }
 
     console.log(
-      `[email] provider=${useResend() ? "resend" : "smtp"} ` +
+      `[email] provider=${useGmailApi() ? "gmail_api" : "smtp"} ` +
         `type=${type} ` +
         `to=${recipientDomain(to)} ` +
         `result=sent ` +
@@ -191,10 +216,11 @@ const sendEmail = async ({ type = "generic", ...content }) => {
     return result;
   } catch (error) {
     console.error(
-      `[email] provider=${useResend() ? "resend" : "smtp"} ` +
+      `[email] provider=${useGmailApi() ? "gmail_api" : "smtp"} ` +
         `type=${type} ` +
         `to=${recipientDomain(to)} ` +
         `result=failed ` +
+        `code=${error.code || "-"} ` +
         `error="${error.message}"`,
     );
 
