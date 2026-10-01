@@ -1,0 +1,64 @@
+const Order = require('../models/Order');
+
+/*
+ * პროდუქტის სტატუსების ერთიანი ბიზნეს-წესები. ფასების სტრუქტურა:
+ *   price    — მიმდინარე (საბოლოო) გასაყიდი ფასი
+ *   oldPrice — თავდაპირველი ფასი, როცა პროდუქტი ფასდაკლებაშია
+ *   onSale   — ფასდაკლების ნიშანი
+ * ყველა წესი არსებობს ორ ფორმაში — MongoDB expression (ფილტრაცია/სორტირება ბაზაში) და
+ * JS ფუნქცია (უკვე ჩატვირთული პროდუქტებისთვის) — ერთი და იგივე ფორმულით.
+ */
+
+// ახალია პროდუქტი, რომელიც დაემატა ბოლო 14 დღის განმავლობაში (ჩათვლით)
+const NEW_PRODUCT_DAYS = 14;
+const newSinceDate = (now = Date.now()) => new Date(now - NEW_PRODUCT_DAYS * 24 * 60 * 60 * 1000);
+const isNewProduct = (p, now = Date.now()) => new Date(p.createdAt) >= newSinceDate(now);
+const isNewExpr = (now) => ({ $gte: ['$createdAt', newSinceDate(now)] });
+
+// აქტიური ფასდაკლება: onSale და თავდაპირველი ფასი მიმდინარეზე მეტია
+const hasDiscountExpr = { $and: ['$onSale', { $gt: ['$oldPrice', 0] }, { $gt: ['$oldPrice', '$price'] }] };
+const hasDiscount = (p) => Boolean(p.onSale && p.oldPrice > 0 && p.oldPrice > p.price);
+
+// ფასდაკლების პროცენტი — ქვემოთ დამრგვალებული მთელი რიცხვი, რომ ბეჯი არასდროს აჭარბებდეს
+// რეალურ ფასდაკლებას (39.6% => 39%). EPSILON — float-ის ცდომილებისთვის (მაგ. 100→60 = ზუსტად 40%).
+const EPSILON = 1e-9;
+const discountPercentExpr = {
+  $cond: [
+    hasDiscountExpr,
+    { $floor: { $add: [{ $multiply: [{ $divide: [{ $subtract: ['$oldPrice', '$price'] }, '$oldPrice'] }, 100] }, EPSILON] } },
+    0,
+  ],
+};
+const discountPercent = (p) => (hasDiscount(p) ? Math.floor(((p.oldPrice - p.price) / p.oldPrice) * 100 + EPSILON) : 0);
+
+// გამოთვლილი ველები, რომლებსაც API ყველა პროდუქტს უმატებს
+const computedFieldsStage = (now = Date.now()) => ({
+  $addFields: { discountPercent: discountPercentExpr, isNew: isNewExpr(now) },
+});
+const withComputedFields = (p, now = Date.now()) => ({ ...p, discountPercent: discountPercent(p), isNew: isNewProduct(p, now) });
+
+/**
+ * გაყიდული ერთეულები თითო პროდუქტზე (გაუქმებული შეკვეთების გარეშე).
+ * @param {object} [match] დამატებითი ფილტრი შეკვეთებზე (მაგ. { user: id } ან თარიღის დიაპაზონი)
+ * @returns {Promise<Map<string, number>>} productId -> გაყიდული რაოდენობა, კლებადობით
+ */
+const getSalesCounts = async (match = {}) => {
+  const rows = await Order.aggregate([
+    { $match: { status: { $ne: 'cancelled' }, ...match } },
+    { $unwind: '$items' },
+    { $group: { _id: '$items.product', units: { $sum: '$items.quantity' } } },
+    { $sort: { units: -1 } },
+  ]);
+  return new Map(rows.map((r) => [String(r._id), r.units]));
+};
+
+module.exports = {
+  NEW_PRODUCT_DAYS,
+  newSinceDate,
+  hasDiscountExpr,
+  discountPercentExpr,
+  discountPercent,
+  computedFieldsStage,
+  withComputedFields,
+  getSalesCounts,
+};

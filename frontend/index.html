@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ka">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f6f5f2" />
+    <title>Tam`i Shop</title>
+    <meta name="description" content="Tam`i Shop — ტექნიკა, სამოსი, სახლის ნივთები და სხვა. უფასო მიწოდება მთელ საქართველოში, გადახდა მიღებისას." />
+    <meta name="application-name" content="Tam`i Shop" />
+    <meta name="apple-mobile-web-app-title" content="Tam`i Shop" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tam`i Shop" />
+    <meta property="og:title" content="Tam`i Shop" />
+    <meta property="og:description" content="ტექნიკა, სამოსი, სახლის ნივთები და სხვა. უფასო მიწოდება მთელ საქართველოში." />
+    <meta property="og:locale" content="ka_GE" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <script>
+      // Apply the saved (or system) theme before first paint to avoid a flash
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (dark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
