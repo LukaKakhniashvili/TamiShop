@@ -13,6 +13,10 @@ const passwordRules = [
   { test: (p) => /\d/.test(p), label: 'ციფრი' },
 ];
 
+// სერვერი აბრუნებს ზუსტ მნიშვნელობებს; ეს მხოლოდ სარეზერვოა, თუ პასუხში არ არის
+const DEFAULT_RESEND_SECONDS = 30;
+const DEFAULT_VALIDITY_SECONDS = 180;
+
 const secondsLeft = (at, now) => Math.max(0, Math.ceil((at - now) / 1000));
 const formatClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
@@ -142,7 +146,12 @@ const Register = () => {
     try {
       // პასუხი მოდის მხოლოდ მას შემდეგ, რაც წერილი მიღებულია SMTP სერვერის მიერ
       const { data } = await api.post('/auth-verification-code-send', { email: form.email });
-      applyTimers(data);
+      // სერვერის მნიშვნელობები; თუ (ძველი) სერვერი არ აბრუნებს — ნაგულისხმევი 30 წმ / 3 წთ
+      applyTimers({
+        resendAvailableInSeconds: data?.resendAvailableInSeconds ?? DEFAULT_RESEND_SECONDS,
+        expiresInSeconds: data?.expiresInSeconds ?? DEFAULT_VALIDITY_SECONDS,
+        codeValiditySeconds: data?.codeValiditySeconds ?? DEFAULT_VALIDITY_SECONDS,
+      });
       setOtpSent(true);
       setForm((f) => ({ ...f, code: '' }));
       storage.set(form.email.trim().toLowerCase());
@@ -154,8 +163,9 @@ const Register = () => {
     } catch (err) {
       const res = err.response?.data;
       // ლოდინის დრო ჯერ არ გასულა — ტაიმერი სერვერის მონაცემით სინქრონიზდება, კოდი არ იცვლება
-      if (err.response?.status === 429 && res?.resendAvailableInSeconds) {
-        applyTimers({ resendAvailableInSeconds: res.resendAvailableInSeconds });
+      if (err.response?.status === 429) {
+        const wait = Number(res?.resendAvailableInSeconds || err.response.headers?.['retry-after']) || DEFAULT_RESEND_SECONDS;
+        applyTimers({ resendAvailableInSeconds: wait });
       }
       setError(res?.message || 'კოდის გაგზავნა ვერ მოხერხდა. სცადეთ თავიდან.');
     } finally {
