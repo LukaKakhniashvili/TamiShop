@@ -54,8 +54,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // გასვლა (დესკტოპი და მობილური) — ტოკენი, მომხმარებლის მდგომარეობა და მომხმარებელზე მიბმული დროებითი მონაცემები
   const logout = () => {
     localStorage.removeItem('token');
+    try {
+      ['register:pendingEmail', 'recovery:pendingEmail'].forEach((k) => sessionStorage.removeItem(k));
+    } catch {
+      /* storage მიუწვდომელია — არაფერია გასასუფთავებელი */
+    }
     setUser(null);
   };
 

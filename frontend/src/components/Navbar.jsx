@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useToast } from '../context/UIContext';
 import Icon from './Icon';
 import { getInitials } from './ui';
 import { BRAND } from '../constants';
@@ -70,7 +71,8 @@ const SearchBox = ({ className = '' }) => {
   );
 };
 
-const UserMenu = ({ user, logout }) => {
+// ანგარიშის მენიუ — დესკტოპზე სახელით, მობილურზე კომპაქტური ავატარით (CSS); ორივეგან ერთი და იგივე გასვლის ლოგიკა
+const UserMenu = ({ user, onLogout }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const location = useLocation();
@@ -83,16 +85,24 @@ const UserMenu = ({ user, logout }) => {
     const onDown = (e) => ref.current && !ref.current.contains(e.target) && setOpen(false);
     const onKey = (e) => e.key === 'Escape' && setOpen(false);
     document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown, { passive: true });
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
 
   return (
     <div className="user-menu" ref={ref}>
-      <button className="user-trigger" aria-expanded={open} aria-haspopup="menu" onClick={() => setOpen((o) => !o)}>
+      <button
+        className="user-trigger"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label="ანგარიშის მენიუ"
+        onClick={() => setOpen((o) => !o)}
+      >
         <span className="avatar">{getInitials(user)}</span>
         <span className="name">{user.firstName || user.email}</span>
         <Icon name="chevronDown" size={16} className="chev" />
@@ -116,7 +126,14 @@ const UserMenu = ({ user, logout }) => {
               <Icon name="dashboard" size={18} /> სამართავი პანელი
             </Link>
           )}
-          <button className="dropdown-item danger" role="menuitem" onClick={logout}>
+          <button
+            className="dropdown-item danger"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+          >
             <Icon name="logout" size={18} /> გასვლა
           </button>
         </div>
@@ -128,6 +145,16 @@ const UserMenu = ({ user, logout }) => {
 const Navbar = () => {
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
+  const toast = useToast();
+  const navigate = useNavigate();
+
+  // გასვლა — ერთი ჰენდლერი დესკტოპისა და მობილურისთვის: სესიის გასუფთავება (AuthContext.logout),
+  // შეტყობინება და მთავარ გვერდზე გადასვლა (დაცული გვერდი აღარ რჩება გახსნილი)
+  const handleLogout = () => {
+    logout();
+    toast({ title: 'წარმატებით გამოხვედით სისტემიდან.' });
+    navigate('/', { replace: true });
+  };
   const [theme, toggleTheme] = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const isStaff = user && (user.role === 'admin' || user.role === 'manager');
@@ -183,15 +210,16 @@ const Navbar = () => {
                 )}
               </Link>
 
-              <div className="nav-desktop-only">
-                {user ? (
-                  <UserMenu user={user} logout={logout} />
-                ) : (
+              {user ? (
+                // მობილურზეც ჩანს (კომპაქტური ავატარი) — იქ ერთადერთი გზაა გასვლისთვის
+                <UserMenu user={user} onLogout={handleLogout} />
+              ) : (
+                <div className="nav-desktop-only">
                   <Link to="/login" className="btn btn-dark btn-sm" style={{ marginLeft: 8 }}>
                     <Icon name="login" size={16} /> შესვლა
                   </Link>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
           <SearchBox className="nav-mobile-search" />

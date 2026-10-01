@@ -2053,6 +2053,13 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .page { padding-top: 20px; }
 
   .nav-search.desktop, .nav-desktop-only { display: none !important; }
+  /* ანგარიშის მენიუ მობილურზე — კომპაქტური ავატარი (44px შეხების არე); dropdown ეკრანში ეტევა */
+  .user-trigger { height: 44px; width: 44px; padding: 0; margin-left: 2px; justify-content: center; }
+  .user-trigger .name, .user-trigger .chev { display: none; }
+  .user-trigger .avatar { width: 34px; height: 34px; }
+  .user-menu .dropdown { width: min(280px, calc(100vw - 32px)); }
+  .user-menu .dropdown-item { min-height: 48px; font-size: 15px; }
+  .user-menu .dropdown-item.danger { color: var(--danger); margin-top: 4px; border-top: 1px solid var(--border); border-radius: 0 0 var(--radius-sm) var(--radius-sm); }
   .nav-mobile-search { display: block; }
   .nav-inner { gap: 12px; }
 
