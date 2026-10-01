@@ -1,18 +1,18 @@
 const nodemailer = require("nodemailer");
-const dns = require("dns");
+const { Resend } = require("resend");
 const { BRAND_NAME } = require("../../constants/brand");
 
-// Render-ზე Gmail SMTP-სთან დაკავშირებისას უპირატესობა მიენიჭოს IPv4-ს.
-// ეს თავიდან გვაცილებს IPv6-ზე ENETUNREACH შეცდომას.
-dns.setDefaultResultOrder("ipv4first");
-
 /*
- * ერთადერთი ელ. ფოსტის სერვისი — ყველა წერილი (ვერიფიკაცია, შეკვეთის დადასტურება ...) იგზავნება
- * ერთი transporter-ით და ერთი გამგზავნით. განსხვავდება მხოლოდ თემა და შაბლონი (templates.js).
+ * Email delivery:
  *
- * გამგზავნი: "Tam`i Shop" <SMTP_USER> — მისამართი არასდროს იქმნება დინამიკურად. Gmail SMTP-ის
- * შემთხვევაში From უნდა იყოს იგივე ანგარიში, რომლითაც ავტორიზაცია ხდება (წინააღმდეგ შემთხვევაში
- * Gmail გადაწერს From-ს და DMARC-ის შესაბამისობა ირღვევა).
+ * LOCAL / SMTP:
+ *   Gmail SMTP → Nodemailer
+ *
+ * DEV / Render:
+ *   Resend HTTPS API
+ *
+ * EMAIL_PROVIDER=resend შემთხვევაში გამოიყენება Resend.
+ * სხვა შემთხვევაში რჩება არსებული SMTP გაგზავნა.
  */
 
 const decodeEntities = (s) =>
@@ -24,7 +24,6 @@ const decodeEntities = (s) =>
     .replace(/&#39;/g, "'")
     .replace(/&amp;/g, "&");
 
-// ტექსტური ვერსია HTML-დან — გამოიყენება, თუ შაბლონი საკუთარ text-ს არ აწვდის
 const htmlToText = (html) =>
   decodeEntities(
     html
@@ -38,18 +37,19 @@ const htmlToText = (html) =>
     .replace(/\n\s*\n+/g, "\n")
     .trim();
 
-// ლოგში მხოლოდ მიმღების დომენი — სრული მისამართი პერსონალური მონაცემია
 const recipientDomain = (to) => `*@${String(to).split("@")[1] || "?"}`;
 
-const isLogOnly = () =>
-  process.env.EMAIL_DELIVERY === "log" ||
-  !(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+const useResend = () => process.env.EMAIL_PROVIDER === "resend";
+
+/*
+ * -------------------------------------------------------
+ * SMTP / Nodemailer
+ * -------------------------------------------------------
+ */
 
 let transporter = null;
 
 const getTransporter = () => {
-  if (isLogOnly()) return null;
-
   if (!transporter) {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
@@ -63,104 +63,138 @@ const getTransporter = () => {
 
       connectionTimeout: 10000,
       socketTimeout: 15000,
-
-      // SMTP hostname მხოლოდ IPv4 მისამართად resolve-დეს.
-      lookup: (hostname, options, callback) => {
-        dns.lookup(hostname, { family: 4 }, callback);
-      },
     });
   }
 
   return transporter;
 };
 
-/** გამგზავნის იდენტობა — ყველა წერილისთვის ერთი და იგივე */
-const senderIdentity = () => ({
-  from: {
-    name: BRAND_NAME,
-    address: process.env.SMTP_USER,
-  },
-
-  // არასავალდებულო: პასუხები სხვა (მაგ. support@) მისამართზე
-  ...(process.env.EMAIL_REPLY_TO
-    ? { replyTo: process.env.EMAIL_REPLY_TO }
-    : {}),
-});
-
-/**
- * ელ. წერილის გაგზავნა.
- * შეცდომას არ აგდებს — აბრუნებს:
- * { sent, mock?, messageId?, error? }
- *
- * თითოეულ გაგზავნაზე ერთი მცდელობა
- * (ავტომატური განმეორება არ ხდება).
- *
- * @param {object} p
- * @param {string} p.type
- * @param {string} p.to
- * @param {string} p.subject
- * @param {string} p.html
- * @param {string} [p.text]
+/*
+ * -------------------------------------------------------
+ * Resend
+ * -------------------------------------------------------
  */
 
-/**
- * საბოლოო წერილი (nodemailer-ის ფორმატით) —
- * ყველა ტიპისთვის ერთნაირი ჰედერები და multipart/alternative
+let resend = null;
+
+const getResend = () => {
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+
+  return resend;
+};
+
+/*
+ * -------------------------------------------------------
+ * Message
+ * -------------------------------------------------------
  */
+
 const buildMessage = ({ to, subject, html, text }) => ({
-  ...senderIdentity(),
   to,
   subject,
   text: text || htmlToText(html),
   html,
 });
 
+/*
+ * -------------------------------------------------------
+ * SMTP sender
+ * -------------------------------------------------------
+ */
+
+const sendWithSmtp = async (message) => {
+  const transporter = getTransporter();
+
+  const info = await transporter.sendMail({
+    from: {
+      name: BRAND_NAME,
+      address: process.env.SMTP_USER,
+    },
+
+    ...(process.env.EMAIL_REPLY_TO
+      ? { replyTo: process.env.EMAIL_REPLY_TO }
+      : {}),
+
+    ...message,
+  });
+
+  return {
+    sent: true,
+    messageId: info.messageId,
+  };
+};
+
+/*
+ * -------------------------------------------------------
+ * Resend sender
+ * -------------------------------------------------------
+ */
+
+const sendWithResend = async (message) => {
+  const client = getResend();
+
+  const { data, error } = await client.emails.send({
+    from: `${BRAND_NAME} <onboarding@resend.dev>`,
+
+    to: [message.to],
+
+    subject: message.subject,
+
+    html: message.html,
+
+    text: message.text,
+
+    ...(process.env.EMAIL_REPLY_TO
+      ? { replyTo: process.env.EMAIL_REPLY_TO }
+      : {}),
+  });
+
+  if (error) {
+    throw new Error(error.message || "Resend email delivery failed");
+  }
+
+  return {
+    sent: true,
+    messageId: data?.id,
+  };
+};
+
+/*
+ * -------------------------------------------------------
+ * Public sender
+ * -------------------------------------------------------
+ */
+
 const sendEmail = async ({ type = "generic", ...content }) => {
   const message = buildMessage(content);
   const { to } = message;
 
-  const t = getTransporter();
-
-  if (!t) {
-    // SMTP-ის გარეშე (development / EMAIL_DELIVERY=log)
-    // კონსოლი არის „მიწოდების არხი" — სრული ტექსტი იბეჭდება
-    console.log(
-      `\n======================================\n` +
-        `[MOCK EMAIL] type=${type}\n` +
-        `To: ${to}\n` +
-        `Subject: ${message.subject}\n\n` +
-        `${message.text}\n` +
-        `======================================\n`,
-    );
-
-    return {
-      sent: false,
-      mock: true,
-    };
-  }
-
   try {
-    const info = await t.sendMail(message);
+    let result;
+
+    if (useResend()) {
+      result = await sendWithResend(message);
+    } else {
+      result = await sendWithSmtp(message);
+    }
 
     console.log(
-      `[email] type=${type} ` +
+      `[email] provider=${useResend() ? "resend" : "smtp"} ` +
+        `type=${type} ` +
         `to=${recipientDomain(to)} ` +
         `result=sent ` +
-        `messageId=${info.messageId} ` +
-        `response="${String(info.response || "").slice(0, 120)}"`,
+        `messageId=${result.messageId || "-"}`,
     );
 
-    return {
-      sent: true,
-      messageId: info.messageId,
-    };
+    return result;
   } catch (error) {
     console.error(
-      `[email] type=${type} ` +
+      `[email] provider=${useResend() ? "resend" : "smtp"} ` +
+        `type=${type} ` +
         `to=${recipientDomain(to)} ` +
         `result=failed ` +
-        `code=${error.code || "-"} ` +
-        `responseCode=${error.responseCode || "-"} ` +
         `error="${error.message}"`,
     );
 
