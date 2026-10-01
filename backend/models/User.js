@@ -36,19 +36,42 @@ const userSchema = new mongoose.Schema(
     },
 
     isActive: { type: Boolean, default: true },
+
+    // პაროლის ბოლო ცვლილება — ამაზე ადრე გაცემული JWT-ები აღარ მოქმედებს (middleware/auth.js)
+    passwordChangedAt: { type: Date, select: false },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+    // პაროლი/მისი hash და უსაფრთხოების ველები API პასუხებში არასდროს ჩანს
+    toJSON: {
+      transform: (doc, ret) => {
+        delete ret.password;
+        delete ret.passwordChangedAt;
+        return ret;
+      },
+    },
+  },
 );
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
+  // არსებული პაროლის შეცვლისას (არა ახალი მომხმარებლისას) ძველი სესიები უქმდება.
+  // -1 წმ: ახლავე გაცემული ახალი ტოკენი (iat წამებშია დამრგვალებული) ვალიდური რჩება.
+  if (!this.isNew) this.passwordChangedAt = new Date(Date.now() - 1000);
   next();
 });
 
+// Google-ით შექმნილ ანგარიშს შეიძლება პაროლი არ ჰქონდეს — მაშინ შედარება ყოველთვის false
 userSchema.methods.matchPassword = async function (enteredPassword) {
+  if (!this.password || typeof enteredPassword !== "string") return false;
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+/** ტოკენი გაცემულია პაროლის ბოლო ცვლილებამდე? (iat — წამებში) */
+userSchema.methods.tokenIssuedBeforePasswordChange = function (iat) {
+  return Boolean(this.passwordChangedAt && iat * 1000 < this.passwordChangedAt.getTime());
 };
 
 module.exports = mongoose.model("User", userSchema);

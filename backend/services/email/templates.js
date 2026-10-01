@@ -37,20 +37,17 @@ const formatDate = (d) =>
  * @param {string} p.code
  * @param {number} p.expiresInMinutes
  */
-// მკაცრად ტრანზაქციული წერილი: მოკლე ტექსტი, ბმულების/სურათების/დამალული ტექსტის გარეშე,
+// ერთჯერადი კოდის წერილის საერთო შაბლონი (რეგისტრაცია, პაროლის აღდგენა).
+// მკაცრად ტრანზაქციული: მოკლე ტექსტი, ბმულების/სურათების/დამალული ტექსტის გარეშე,
 // კოდი თემაში არ იწერება; HTML და plain-text ვერსიები ერთსა და იმავე ინფორმაციას შეიცავს.
-const verificationEmail = ({ code, expiresInMinutes }) => {
-  const footerNote = `ეს წერილი გამოგზავნილია, რადგან ამ მისამართით დაიწყო რეგისტრაცია ${BRAND.name}-ზე.`;
+const codeEmail = ({ subject, title, heading, intro, instruction, code, expiresInMinutes, ignoreNote, footerNote }) => {
+  const p = (text, margin = '0') => `<p style="margin:${margin};font:400 15px/1.65 ${F};color:${BRAND.text};">${esc(text)}</p>`;
 
   const body = `
     <tr><td class="px" style="padding:36px 40px 8px 40px;">
-      <h1 class="h1" style="margin:0 0 12px 0;font:800 26px/1.25 ${F};color:${BRAND.ink};">დაადასტურეთ ელ. ფოსტა</h1>
-      <p style="margin:0 0 10px 0;font:400 15px/1.65 ${F};color:${BRAND.text};">
-        გმადლობთ, რომ რეგისტრირდებით ${esc(BRAND.name)}-ზე.
-      </p>
-      <p style="margin:0;font:400 15px/1.65 ${F};color:${BRAND.text};">
-        რეგისტრაციის დასასრულებლად გამოიყენეთ ვერიფიკაციის კოდი:
-      </p>
+      <h1 class="h1" style="margin:0 0 12px 0;font:800 26px/1.25 ${F};color:${BRAND.ink};">${esc(heading)}</h1>
+      ${p(intro, '0 0 10px 0')}
+      ${p(instruction)}
     </td></tr>
     <tr><td class="px" align="center" style="padding:24px 40px;">
       <table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr>
@@ -60,39 +57,61 @@ const verificationEmail = ({ code, expiresInMinutes }) => {
       </tr></table>
     </td></tr>
     <tr><td class="px" style="padding:0 40px 8px 40px;">
-      <p style="margin:0;font:400 15px/1.65 ${F};color:${BRAND.text};">
-        კოდი მოქმედებს ${esc(expiresInMinutes)} წუთის განმავლობაში.
-      </p>
+      ${p(`კოდი მოქმედებს ${expiresInMinutes} წუთის განმავლობაში.`)}
     </td></tr>
     <tr><td class="px" style="padding:16px 40px 36px 40px;">
       <p style="margin:0;padding-top:16px;border-top:1px solid ${BRAND.border};font:400 13px/1.6 ${F};color:${BRAND.muted};">
-        თუ ანგარიში თქვენ არ შეგიქმნიათ, უბრალოდ უგულებელყავით ეს წერილი. არავის გაუზიაროთ ეს კოდი.
+        ${esc(ignoreNote)} არავის გაუზიაროთ ეს კოდი.
       </p>
     </td></tr>`;
 
   const text = [
-    'დაადასტურეთ ელ. ფოსტა',
+    heading,
     '',
-    `გმადლობთ, რომ რეგისტრირდებით ${BRAND.name}-ზე.`,
-    'რეგისტრაციის დასასრულებლად გამოიყენეთ ვერიფიკაციის კოდი:',
+    intro,
+    instruction,
     '',
     `    ${code}`,
     '',
     `კოდი მოქმედებს ${expiresInMinutes} წუთის განმავლობაში.`,
     '',
-    'თუ ანგარიში თქვენ არ შეგიქმნიათ, უბრალოდ უგულებელყავით ეს წერილი. არავის გაუზიაროთ ეს კოდი.',
+    `${ignoreNote} არავის გაუზიაროთ ეს კოდი.`,
     '',
     '—',
     footerNote,
     `© ${new Date().getFullYear()} ${BRAND.name}`,
   ].join('\n');
 
-  return {
-    subject: `${BRAND.name} — ვერიფიკაციის კოდი`,
-    html: renderLayout({ title: 'ელ. ფოსტის ვერიფიკაცია', body, footerNote: esc(footerNote) }),
-    text,
-  };
+  return { subject, html: renderLayout({ title, body, footerNote: esc(footerNote) }), text };
 };
+
+/** რეგისტრაციის ვერიფიკაციის კოდი */
+const verificationEmail = ({ code, expiresInMinutes }) =>
+  codeEmail({
+    subject: `${BRAND.name} — ვერიფიკაციის კოდი`,
+    title: 'ელ. ფოსტის ვერიფიკაცია',
+    heading: 'დაადასტურეთ ელ. ფოსტა',
+    intro: `გმადლობთ, რომ რეგისტრირდებით ${BRAND.name}-ზე.`,
+    instruction: 'რეგისტრაციის დასასრულებლად გამოიყენეთ ვერიფიკაციის კოდი:',
+    code,
+    expiresInMinutes,
+    ignoreNote: 'თუ ანგარიში თქვენ არ შეგიქმნიათ, უბრალოდ უგულებელყავით ეს წერილი.',
+    footerNote: `ეს წერილი გამოგზავნილია, რადგან ამ მისამართით დაიწყო რეგისტრაცია ${BRAND.name}-ზე.`,
+  });
+
+/** პაროლის აღდგენის კოდი */
+const passwordResetEmail = ({ code, expiresInMinutes }) =>
+  codeEmail({
+    subject: `${BRAND.name} — პაროლის აღდგენის კოდი`,
+    title: 'პაროლის აღდგენა',
+    heading: 'პაროლის აღდგენა',
+    intro: `მივიღეთ მოთხოვნა თქვენი ${BRAND.name}-ის ანგარიშის პაროლის აღდგენაზე.`,
+    instruction: 'გასაგრძელებლად გამოიყენეთ ეს კოდი:',
+    code,
+    expiresInMinutes,
+    ignoreNote: 'თუ პაროლის აღდგენა თქვენ არ მოგითხოვიათ, უბრალოდ უგულებელყავით ეს წერილი — პაროლი არ შეიცვლება.',
+    footerNote: `ეს წერილი გამოგზავნილია, რადგან ამ მისამართისთვის მოთხოვნილ იქნა პაროლის აღდგენა ${BRAND.name}-ზე.`,
+  });
 
 // ---------------------------------------------------------------------------
 // შეკვეთის დადასტურება
@@ -229,4 +248,4 @@ const orderConfirmationEmail = ({ order, orderUrl }) => {
   };
 };
 
-module.exports = { verificationEmail, orderConfirmationEmail };
+module.exports = { verificationEmail, passwordResetEmail, orderConfirmationEmail };

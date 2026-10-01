@@ -1,60 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/UIContext';
 import api from '../api/axios';
 import Icon from '../components/Icon';
+import PasswordRules from '../components/PasswordRules';
+import VerificationCodePanel from '../components/VerificationCodePanel';
 import { Alert, Field, IconInput, PasswordInput } from '../components/ui';
-
-const passwordRules = [
-  { test: (p) => p.length >= 8, label: 'მინ. 8 სიმბოლო' },
-  { test: (p) => /[A-Z]/.test(p), label: 'დიდი ასო' },
-  { test: (p) => /[a-z]/.test(p), label: 'პატარა ასო' },
-  { test: (p) => /\d/.test(p), label: 'ციფრი' },
-];
-
-// სერვერი აბრუნებს ზუსტ მნიშვნელობებს; ეს მხოლოდ სარეზერვოა, თუ პასუხში არ არის
-const DEFAULT_RESEND_SECONDS = 30;
-const DEFAULT_VALIDITY_SECONDS = 180;
-
-const secondsLeft = (at, now) => Math.max(0, Math.ceil((at - now) / 1000));
-const formatClock = (s) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
-
-// ყოველ წამში ხელახალი რენდერი (მხოლოდ მაშინ, როცა ტაიმერი საჭიროა); დრო თავად რენდერში იკითხება
-const useSecondTicker = (active) => {
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!active) return undefined;
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, [active]);
-};
-
-// გვერდის განახლებისას მხოლოდ ელ. ფოსტა ინახება (კოდი — არასდროს); ტაიმერები სერვერიდან აღდგება
-const PENDING_EMAIL_KEY = 'register:pendingEmail';
-const storage = {
-  get: () => {
-    try {
-      return sessionStorage.getItem(PENDING_EMAIL_KEY) || '';
-    } catch {
-      return '';
-    }
-  },
-  set: (email) => {
-    try {
-      sessionStorage.setItem(PENDING_EMAIL_KEY, email);
-    } catch {
-      /* private mode — refresh-ის აღდგენა უბრალოდ არ იმუშავებს */
-    }
-  },
-  clear: () => {
-    try {
-      sessionStorage.removeItem(PENDING_EMAIL_KEY);
-    } catch {
-      /* ignore */
-    }
-  },
-};
+import useVerificationCode, { formatClock } from '../hooks/useVerificationCode';
+import { validatePassword } from '../utils/passwordPolicy';
 
 const Register = () => {
   const { register: authRegister } = useAuth();
@@ -75,102 +29,48 @@ const Register = () => {
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [emailVerified, setEmailVerified] = useState(false);
-  const [sendingOtp, setSendingOtp] = useState(null); // null | 'initial' | 'resend' — დუბლირებული მოთხოვნების თავიდან ასაცილებლად
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  // ტაიმერები სერვერის პასუხიდან (წამები → ლოკალური დრო); სერვერი რჩება ჭეშმარიტების წყაროდ
-  const [timers, setTimers] = useState({ resendAt: 0, expiresAt: 0, validitySeconds: 180 });
-  const now = Date.now();
-  useSecondTicker(!emailVerified && (otpSent || timers.resendAt > now));
 
-  const resendIn = secondsLeft(timers.resendAt, now);
-  const expiresIn = secondsLeft(timers.expiresAt, now);
-  const codeExpired = otpSent && expiresIn === 0;
-
-  const applyTimers = (data) => {
-    const t = Date.now();
-    setTimers((prev) => ({
-      resendAt: t + (data.resendAvailableInSeconds || 0) * 1000,
-      expiresAt: data.expiresInSeconds !== undefined ? t + data.expiresInSeconds * 1000 : prev.expiresAt,
-      validitySeconds: data.codeValiditySeconds || prev.validitySeconds,
-    }));
-  };
-
-  const resetVerification = () => {
-    setOtpSent(false);
-    setTimers((t) => ({ ...t, resendAt: 0, expiresAt: 0 }));
-    storage.clear();
-  };
-
-  // გვერდის განახლების შემდეგ — აქტიური კოდის და ლოდინის დროის აღდგენა სერვერიდან
-  useEffect(() => {
-    const email = storage.get();
-    if (!email) return;
-    setForm((f) => ({ ...f, email }));
-    api
-      .get('/auth-verification-code-status', { params: { email } })
-      .then(({ data }) => {
-        if (data.active || data.resendAvailableInSeconds > 0) {
-          applyTimers(data);
-          setOtpSent(true);
-        } else storage.clear();
-      })
-      .catch(() => {});
-  }, []);
+  // კოდის ნაკადი (ტაიმერები, ხელახლა გაგზავნა, refresh-ის აღდგენა) — საერთოა პაროლის აღდგენასთან
+  const vc = useVerificationCode({
+    sendUrl: '/auth-verification-code-send',
+    statusUrl: '/auth-verification-code-status',
+    storageKey: 'register:pendingEmail',
+    done: emailVerified,
+    onRestore: (email) => setForm((f) => ({ ...f, email })),
+  });
 
   const handleChange = (e) => {
     // სხვა მისამართზე გადასვლისას წინა ვერიფიკაციის მდგომარეობა უქმდება
-    if (e.target.name === 'email' && otpSent) {
-      resetVerification();
+    if (e.target.name === 'email' && vc.codeSent) {
+      vc.reset();
       setForm({ ...form, email: e.target.value, code: '' });
       return;
     }
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const rulesMet = passwordRules.filter((r) => r.test(form.password)).length;
-  const score = form.password ? (rulesMet === 4 ? 3 : rulesMet >= 3 ? 2 : 1) : 0;
-
   const handleSendOtp = async () => {
     if (!form.email) {
       setError('გთხოვთ, ჯერ შეიყვანოთ ელ. ფოსტა');
       return;
     }
-    if (sendingOtp || resendIn > 0) return;
-    const isResend = otpSent;
     setError('');
     setSuccess('');
-    setSendingOtp(isResend ? 'resend' : 'initial');
-    try {
-      // პასუხი მოდის მხოლოდ მას შემდეგ, რაც წერილი მიღებულია SMTP სერვერის მიერ
-      const { data } = await api.post('/auth-verification-code-send', { email: form.email });
-      // სერვერის მნიშვნელობები; თუ (ძველი) სერვერი არ აბრუნებს — ნაგულისხმევი 30 წმ / 3 წთ
-      applyTimers({
-        resendAvailableInSeconds: data?.resendAvailableInSeconds ?? DEFAULT_RESEND_SECONDS,
-        expiresInSeconds: data?.expiresInSeconds ?? DEFAULT_VALIDITY_SECONDS,
-        codeValiditySeconds: data?.codeValiditySeconds ?? DEFAULT_VALIDITY_SECONDS,
-      });
-      setOtpSent(true);
-      setForm((f) => ({ ...f, code: '' }));
-      storage.set(form.email.trim().toLowerCase());
-      toast({
-        type: 'success',
-        title: isResend ? 'ახალი კოდი გაიგზავნა' : 'ვერიფიკაციის კოდი წარმატებით გაიგზავნა',
-        description: isResend ? 'ახალი ვერიფიკაციის კოდი გაიგზავნა თქვენს ელ. ფოსტაზე' : undefined,
-      });
-    } catch (err) {
-      const res = err.response?.data;
-      // ლოდინის დრო ჯერ არ გასულა — ტაიმერი სერვერის მონაცემით სინქრონიზდება, კოდი არ იცვლება
-      if (err.response?.status === 429) {
-        const wait = Number(res?.resendAvailableInSeconds || err.response.headers?.['retry-after']) || DEFAULT_RESEND_SECONDS;
-        applyTimers({ resendAvailableInSeconds: wait });
-      }
-      setError(res?.message || 'კოდის გაგზავნა ვერ მოხერხდა. სცადეთ თავიდან.');
-    } finally {
-      setSendingOtp(null);
+    const r = await vc.send(form.email);
+    if (r.skipped) return;
+    if (!r.ok) {
+      setError(r.error);
+      return;
     }
+    setForm((f) => ({ ...f, code: '' }));
+    toast({
+      type: 'success',
+      title: r.isResend ? 'ახალი კოდი გაიგზავნა' : 'ვერიფიკაციის კოდი წარმატებით გაიგზავნა',
+      description: r.isResend ? 'ახალი ვერიფიკაციის კოდი გაიგზავნა თქვენს ელ. ფოსტაზე' : undefined,
+    });
   };
 
   const handleVerifyOtp = async () => {
@@ -183,13 +83,13 @@ const Register = () => {
     try {
       await api.post('/auth-verification-code-verify', { email: form.email, code: form.code });
       setEmailVerified(true);
-      storage.clear();
+      vc.clearStorage();
       setSuccess('ელ. ფოსტა წარმატებით დადასტურდა!');
     } catch (err) {
       const res = err.response?.data;
       if (['CODE_EXPIRED', 'TOO_MANY_ATTEMPTS', 'CODE_NOT_FOUND'].includes(res?.code)) setForm((f) => ({ ...f, code: '' }));
       // ვადაგასვლას პანელის გაფრთხილება აჩვენებს (ახალი კოდის ღილაკთან ერთად) — ზედა შეცდომა აღარ დუბლირდება
-      if (res?.code === 'CODE_EXPIRED') setTimers((t) => ({ ...t, expiresAt: 0 }));
+      if (res?.code === 'CODE_EXPIRED') vc.markExpired();
       else setError(res?.message || 'კოდის შემოწმება ვერ მოხერხდა');
     } finally {
       setVerifyingOtp(false);
@@ -206,9 +106,9 @@ const Register = () => {
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-    if (!passwordRegex.test(form.password)) {
-      setError('პაროლი უნდა შეიცავდეს მინიმუმ 8 სიმბოლოს, ერთ დიდ ასოს და ერთ ციფრს');
+    const passwordError = validatePassword(form.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -221,7 +121,7 @@ const Register = () => {
       // ვერიფიკაციის ვადა (30 წთ) ამოიწურა — ელ. ფოსტა თავიდან უნდა დადასტურდეს
       if (err.response?.data?.code === 'VERIFICATION_REQUIRED') {
         setEmailVerified(false);
-        resetVerification();
+        vc.reset();
         setForm((f) => ({ ...f, code: '' }));
       }
       setError(err.response?.data?.message || 'რეგისტრაცია ვერ მოხერხდა. სცადეთ თავიდან.');
@@ -277,20 +177,20 @@ const Register = () => {
                   <Icon name="check" size={16} strokeWidth={3} /> დადასტურდა
                 </span>
               ) : (
-                !otpSent && (
+                !vc.codeSent && (
                   <button
                     type="button"
                     className="btn"
                     style={{ height: 46 }}
                     onClick={handleSendOtp}
-                    disabled={Boolean(sendingOtp) || !form.email || submitting || resendIn > 0}
+                    disabled={Boolean(vc.sending) || !form.email || submitting || vc.resendIn > 0}
                   >
-                    {sendingOtp === 'initial' ? (
+                    {vc.sending === 'initial' ? (
                       <>
                         <span className="spinner" /> იგზავნება...
                       </>
-                    ) : resendIn > 0 ? (
-                      <span className="otp-timer">{formatClock(resendIn)}</span>
+                    ) : vc.resendIn > 0 ? (
+                      <span className="otp-timer">{formatClock(vc.resendIn)}</span>
                     ) : (
                       'კოდის გაგზავნა'
                     )}
@@ -300,80 +200,16 @@ const Register = () => {
             </div>
           </Field>
 
-          {otpSent && !emailVerified && (
-            <div className="otp-panel">
-              {codeExpired ? (
-                <Alert type="warning">ვერიფიკაციის კოდის ვადა ამოიწურა. გთხოვთ, მოითხოვოთ ახალი კოდი.</Alert>
-              ) : (
-                <Alert type="info">
-                  ვერიფიკაციის კოდი გაიგზავნა თქვენს ელ. ფოსტაზე. კოდის მოქმედების ვადა:{' '}
-                  {Math.round(timers.validitySeconds / 60)} წუთი
-                  {expiresIn > 0 && (
-                    <>
-                      {' '}
-                      · დარჩა <span className="otp-timer">{formatClock(expiresIn)}</span>
-                    </>
-                  )}
-                </Alert>
-              )}
-
-              <Field label="ვერიფიკაციის კოდი" required hint="შეამოწმეთ ელ. ფოსტა (მათ შორის Spam საქაღალდე)">
-                <div className="input-row">
-                  <input
-                    className="input otp-input"
-                    type="text"
-                    inputMode="numeric"
-                    name="code"
-                    placeholder="••••"
-                    maxLength="4"
-                    value={form.code}
-                    onChange={(e) => setForm({ ...form, code: e.target.value.replace(/\D/g, '') })}
-                    disabled={submitting || codeExpired}
-                    autoFocus
-                    autoComplete="one-time-code"
-                  />
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    style={{ height: 46 }}
-                    onClick={handleVerifyOtp}
-                    disabled={verifyingOtp || form.code.length < 4 || submitting || codeExpired}
-                  >
-                    {verifyingOtp ? <span className="spinner" /> : 'დადასტურება'}
-                  </button>
-                </div>
-              </Field>
-
-              <div className="otp-resend">
-                <span id="otp-resend-status">
-                  {resendIn > 0 ? (
-                    <>
-                      კოდის ხელახლა მოთხოვნა შესაძლებელია <span className="otp-timer">{formatClock(resendIn)}</span>-ში
-                    </>
-                  ) : (
-                    'არ მიგიღიათ კოდი?'
-                  )}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-sm"
-                  onClick={handleSendOtp}
-                  disabled={resendIn > 0 || Boolean(sendingOtp) || submitting}
-                  aria-describedby="otp-resend-status"
-                  title={resendIn > 0 ? `ხელმისაწვდომი იქნება ${formatClock(resendIn)}-ში` : undefined}
-                >
-                  {sendingOtp === 'resend' ? (
-                    <>
-                      <span className="spinner" /> იგზავნება...
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="refresh" size={14} /> კოდის ხელახლა მოთხოვნა
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
+          {vc.codeSent && !emailVerified && (
+            <VerificationCodePanel
+              vc={vc}
+              code={form.code}
+              onCodeChange={(code) => setForm((f) => ({ ...f, code }))}
+              onVerify={handleVerifyOtp}
+              onResend={handleSendOtp}
+              verifying={verifyingOtp}
+              disabled={submitting}
+            />
           )}
 
           <div className="form-grid">
@@ -396,24 +232,7 @@ const Register = () => {
 
           <Field label="პაროლი" required>
             <PasswordInput name="password" value={form.password} onChange={handleChange} required disabled={submitting} autoComplete="new-password" />
-            <div className="pw-meter" data-score={score}>
-              <span />
-              <span />
-              <span />
-            </div>
-            <div className="pw-rules">
-              {passwordRules.map((r) => {
-                const ok = r.test(form.password);
-                return (
-                  <span key={r.label} className={`pw-rule ${ok ? 'ok' : ''}`}>
-                    <span className="tick">
-                      <Icon name="check" size={10} strokeWidth={4} />
-                    </span>
-                    {r.label}
-                  </span>
-                );
-              })}
-            </div>
+            <PasswordRules password={form.password} />
           </Field>
 
           <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={!emailVerified || submitting}>

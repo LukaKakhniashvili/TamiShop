@@ -2,6 +2,15 @@ const express = require('express');
 const router = express.Router();
 
 const auth = require('../controllers/authController');
+const password = require('../controllers/passwordController');
+const {
+  limitCodeSend,
+  limitCodeVerify,
+  limitResetSend,
+  limitResetVerify,
+  limitResetComplete,
+  limitPasswordChange,
+} = require('../middleware/authLimits');
 const categories = require('../controllers/categoryController');
 const products = require('../controllers/productController');
 const orders = require('../controllers/orderController');
@@ -22,11 +31,18 @@ const admin = [protect, authorize('admin')];
 router.post('/auth-google-login', auth.googleLogin);
 router.post('/auth-register', auth.register);
 router.post('/auth-login', auth.login);
-router.post('/auth-verification-code-send', auth.sendOtp); // ვერიფიკაციის კოდი ელ. ფოსტაზე
+router.post('/auth-verification-code-send', limitCodeSend, auth.sendOtp); // ვერიფიკაციის კოდი ელ. ფოსტაზე
 router.get('/auth-verification-code-status', auth.otpStatus); // დარჩენილი ტაიმერები (გვერდის განახლების შემდეგ)
-router.post('/auth-verification-code-verify', auth.verifyOtp);
+router.post('/auth-verification-code-verify', limitCodeVerify, auth.verifyOtp);
 router.get('/auth-profile', protect, auth.getMe);
 router.put('/auth-profile-update', protect, auth.updateMe);
+
+// ---- პაროლი: შეცვლა (ავტორიზებული) და აღდგენა (კოდი → reset token → ახალი პაროლი)
+router.post('/auth-password-change', protect, limitPasswordChange, password.changePassword);
+router.post('/auth-password-reset-code-send', limitResetSend, password.sendResetCode);
+router.get('/auth-password-reset-code-status', password.resetCodeStatus);
+router.post('/auth-password-reset-code-verify', limitResetVerify, password.verifyResetCode);
+router.post('/auth-password-reset', limitResetComplete, password.resetPassword);
 
 // ---- კატეგორიები
 router.get('/category-list', categories.getCategories);

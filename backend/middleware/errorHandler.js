@@ -4,7 +4,8 @@ const notFound = (req, res, next) => {
 };
 
 const errorHandler = (err, req, res, next) => {
-  let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
+  if (err.headers) res.set(err.headers);
   let message = err.message;
 
   // Mongoose bad ObjectId

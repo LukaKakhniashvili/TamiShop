@@ -18,9 +18,10 @@ const protect = asyncHandler(async (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-__v');
+    const user = await User.findById(decoded.id).select('-__v +passwordChangedAt');
 
-    if (!user || !user.isActive) {
+    // პაროლის შეცვლამდე/აღდგენამდე გაცემული ტოკენი აღარ მოქმედებს
+    if (!user || !user.isActive || user.tokenIssuedBeforePasswordChange(decoded.iat)) {
       res.status(401);
       throw new Error('მომხმარებელი ვერ მოიძებნა ან დეაქტივირებულია');
     }
@@ -39,8 +40,8 @@ const optionalAuth = asyncHandler(async (req, res, next) => {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('-__v');
-      if (user && user.isActive) req.user = user;
+      const user = await User.findById(decoded.id).select('-__v +passwordChangedAt');
+      if (user && user.isActive && !user.tokenIssuedBeforePasswordChange(decoded.iat)) req.user = user;
     } catch (error) {
       // არავალიდური ტოკენი — ვაგრძელებთ როგორც ანონიმური მომხმარებელი
     }

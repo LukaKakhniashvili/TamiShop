@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
+const { validatePassword } = require('../utils/passwordPolicy');
 
 // @desc    ყველა მომხმარებელი
 // @route   GET /api/users
@@ -23,6 +24,12 @@ const createUser = asyncHandler(async (req, res) => {
   if (!['admin', 'manager'].includes(role)) {
     res.status(400);
     throw new Error('ამ გზით მხოლოდ ადმინისტრატორის ან მენეჯერის დამატებაა შესაძლებელი');
+  }
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    res.status(400);
+    throw new Error(passwordError);
   }
 
   const userExists = await User.findOne({ email: email.toLowerCase() });
@@ -67,7 +74,14 @@ const updateUser = asyncHandler(async (req, res) => {
   }
   
   if (isActive !== undefined) user.isActive = isActive;
-  if (password) user.password = password;
+  if (password) {
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      res.status(400);
+      throw new Error(passwordError);
+    }
+    user.password = password; // ძველი სესიები უქმდება (passwordChangedAt)
+  }
 
   const updated = await user.save();
   res.json(updated);

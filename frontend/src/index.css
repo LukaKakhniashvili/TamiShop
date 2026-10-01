@@ -1702,6 +1702,15 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
 .auth-head h1 { font-size: 26px; font-weight: 800; }
 .auth-head p { color: var(--muted); margin-top: 6px; font-size: 14px; }
 .auth-foot { text-align: center; font-size: 14px; color: var(--muted); margin-top: 20px; }
+.auth-foot-secondary { margin-top: 8px; font-size: 13px; }
+
+/* პაროლის აღდგენა / შეცვლა */
+.recovery-email { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius); background: var(--surface-2); font-size: 14px; font-weight: 600; color: var(--text-2); min-width: 0; }
+.recovery-email svg { color: var(--muted); flex-shrink: 0; }
+.recovery-email span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.recovery-change { border: none; background: none; padding: 4px 2px; font: inherit; font-size: 13px; cursor: pointer; flex-shrink: 0; }
+.change-password { margin-top: 20px; }
+.field-error .link { font-size: inherit; }
 .google-wrap { display: flex; justify-content: center; }
 
 .steps { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
@@ -1776,6 +1785,10 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
 
 .order-card { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
 .order-card + .order-card { margin-top: 12px; }
+/* მობილურზე accordion (იხ. @media 720px); დესკტოპზე სათაური დამალულია და დეტალები ყოველთვის ჩანს */
+.order-acc-head { display: none; }
+.order-acc-content { display: flex; flex-direction: column; gap: 14px; }
+.order-lines div > span:last-child, .order-total > span:last-child { white-space: nowrap; }
 .order-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .order-top .id { font-weight: 800; font-size: 15px; }
 .order-top .date { color: var(--muted); font-size: 13px; }
@@ -1964,8 +1977,9 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
 .toast-error .toast-timer { color: var(--danger); }
 .toast-info .toast-timer { color: var(--info); }
 
-.dialog-backdrop { position: fixed; inset: 0; background: var(--overlay); z-index: 300; display: grid; place-items: center; padding: 16px; animation: fadeIn 200ms ease; backdrop-filter: blur(3px); }
-.dialog { width: 100%; max-width: 420px; background: var(--surface); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-lg); animation: popIn 300ms var(--ease-out); }
+/* minmax(0, 420px): სვეტი ეკრანზე ვიწროვდება (place-items: center-ით სვეტი შიგთავსის სიგანეს იღებდა) */
+.dialog-backdrop { position: fixed; inset: 0; background: var(--overlay); z-index: 300; display: grid; grid-template-columns: minmax(0, 420px); place-content: center; padding: 16px; animation: fadeIn 200ms ease; backdrop-filter: blur(3px); }
+.dialog { width: 100%; max-width: 420px; min-width: 0; overflow-wrap: anywhere; background: var(--surface); border-radius: var(--radius-lg); padding: 24px; box-shadow: var(--shadow-lg); animation: popIn 300ms var(--ease-out); }
 .dialog-icon { width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center; background: var(--danger-soft); color: var(--danger); margin-bottom: 16px; }
 .dialog h3 { font-size: 18px; font-weight: 800; }
 .dialog p { color: var(--text-2); margin-top: 8px; font-size: 14px; }
@@ -2126,9 +2140,52 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .rail-deals .rail-track { margin: -8px -16px -20px; }
   .pc-badge.deal-badge { font-size: 13px; padding: 4px 9px; }
   .catalog-head { align-items: stretch; }
-  .listing-tools { width: 100%; gap: 10px; }
-  .sort-control { flex: 1; }
+  .listing-tools { width: 100%; gap: 10px 12px; justify-content: space-between; }
+  /* basis = ყველაზე გრძელი ვარიანტის სიგანე: თუ ფილტრის გვერდით ვერ ეტევა, ცალკე რიგზე გადადის და არ იჭრება */
+  .sort-control { flex: 1 1 236px; }
   .sort-control .select { width: 100%; min-width: 0; }
+
+  /* hero: ფასდაკლების/ფასის მთავარი ციფრი მობილურზე ბარათის შიგნით, კოპის თავზე (ადრე კიდეზე იჭრებოდა) */
+  .hero-slide { padding: 24px 20px 56px; row-gap: 6px; }
+  .hero-art { position: static; order: -1; min-height: 0; height: auto; opacity: 1; display: flex; justify-content: flex-start; justify-self: stretch; place-items: center start; }
+  .hero-big { display: block; margin-right: auto; font-size: clamp(44px, 14vw, 60px); letter-spacing: -0.04em; text-shadow: 0 10px 30px rgba(0, 0, 0, 0.18); }
+  .hero-copy { gap: 12px; }
+  .hero-sub { font-size: 15px; }
+  .hero-controls { left: 20px; bottom: 22px; }
+
+  /* checkout: ღილაკები ერთმანეთის ქვეშ, სრულ სიგანეზე — მთავარი მოქმედება ზემოთ */
+  .checkout-actions { flex-direction: column-reverse; }
+  .checkout-actions .btn, .checkout-actions .btn-primary { flex: 0 0 auto; width: 100%; min-width: 0; height: auto; min-height: 52px; padding: 12px 16px; white-space: normal; text-align: center; line-height: 1.25; }
+
+  /* დადასტურების ფანჯარა */
+  .dialog { padding: 20px; }
+  .dialog-actions { flex-direction: column; margin-top: 20px; }
+  .dialog-actions .btn { width: 100%; white-space: normal; height: auto; min-height: 44px; padding: 10px 16px; line-height: 1.25; }
+
+  /* პროფილის ჩანართები — ორივე სრულად ჩანს */
+  .profile-tabs .tabs { display: flex; width: 100%; }
+  .profile-tabs .tab { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 8px; gap: 6px; font-size: 13px; white-space: normal; text-align: center; line-height: 1.2; height: auto; min-height: 40px; }
+
+  /* ჩემი შეკვეთები — accordion: დახურულზე მხოლოდ ნომერი და ჯამი */
+  .order-card.order-acc { padding: 0; gap: 0; }
+  .order-acc-head {
+    display: flex; align-items: center; gap: 12px; width: 100%; min-height: 60px; padding: 14px 16px;
+    border: none; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer;
+    border-radius: inherit; -webkit-tap-highlight-color: transparent;
+  }
+  .order-acc-head:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+  .order-acc-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+  .order-acc-id strong { font-size: 14px; font-weight: 700; color: var(--text-2); overflow-wrap: anywhere; }
+  .order-acc-total { font-weight: 800; font-size: 17px; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .order-acc-chev { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); color: var(--text-2); flex-shrink: 0; transition: transform var(--dur) var(--ease-out), background-color var(--dur-fast) ease; }
+  .order-acc.open .order-acc-chev { transform: rotate(180deg); background: var(--accent-soft); color: var(--accent-ink); }
+  .order-acc-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 320ms var(--ease-out); }
+  .order-acc.open .order-acc-body { grid-template-rows: 1fr; }
+  .order-acc-inner { min-height: 0; overflow: hidden; }
+  .order-acc-content { padding: 14px 16px 16px; border-top: 1px solid var(--border); gap: 12px; opacity: 0; transition: opacity 240ms ease; }
+  .order-acc.open .order-acc-content { opacity: 1; }
+  .order-acc .order-top .id { display: none; }
+  .order-acc .order-top > div:last-child { width: 100%; }
   .card-pad { padding: 18px; }
   .auth-card { padding: 24px 20px; }
 
@@ -2139,7 +2196,7 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .pd-assure { grid-template-columns: 1fr; }
 
   .checkout-steps { min-width: 0; width: 100%; }
-  .checkout-steps .step:not(.active) .step-label { display: none; }
+  .checkout-steps .step:not(.active) .step-label, .recovery-steps .step:not(.active) .step-label { display: none; }
   .pay-methods { grid-template-columns: 1fr; }
   .delivery-info-grid { grid-template-columns: 1fr 1fr; }
   .checkout-next { align-self: stretch; }

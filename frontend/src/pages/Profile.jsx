@@ -5,11 +5,13 @@ import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/UIContext';
 import Icon from '../components/Icon';
 import CitySelect from '../components/checkout/CitySelect';
+import ChangePasswordCard from '../components/ChangePasswordCard';
 import { EmptyState, Field, Tabs, formatPrice, getInitials } from '../components/ui';
 import { paymentMethodLabels, paymentStatusLabels, paymentStatusPill, statusLabels, statusPill } from '../constants';
 
 const MyOrders = () => {
   const [orders, setOrders] = useState(null);
+  const [openId, setOpenId] = useState(null);
 
   useEffect(() => {
     api
@@ -42,46 +44,73 @@ const MyOrders = () => {
 
   return (
     <div>
-      {orders.map((o, i) => (
-        <div key={o._id} className="card order-card reveal" style={{ '--i': i }}>
-          <div className="order-top">
-            <div>
-              <div className="id">შეკვეთა {o.orderNumber || `#${o._id.slice(-6).toUpperCase()}`}</div>
-              <div className="date">
-                {new Date(o.createdAt).toLocaleDateString('ka-GE', { year: 'numeric', month: 'long', day: 'numeric' })}
+      {orders.map((o, i) => {
+        const number = o.orderNumber || `#${o._id.slice(-6).toUpperCase()}`;
+        const open = openId === o._id;
+        return (
+          <div key={o._id} className={`card order-card order-acc reveal ${open ? 'open' : ''}`} style={{ '--i': i }}>
+            {/* მობილურზე accordion: დახურულზე მხოლოდ ნომერი და ჯამი, ერთდროულად ერთი შეკვეთაა გახსნილი.
+                დესკტოპზე ეს სათაური დამალულია და დეტალები ყოველთვის ჩანს (CSS) */}
+            <button
+              type="button"
+              className="order-acc-head"
+              aria-expanded={open}
+              aria-controls={`order-${o._id}`}
+              onClick={() => setOpenId(open ? null : o._id)}
+            >
+              <span className="order-acc-id">
+                <strong>შეკვეთა {number}</strong>
+                <span className="order-acc-total">{formatPrice(o.totalPrice)}</span>
+              </span>
+              <span className="order-acc-chev" aria-hidden="true">
+                <Icon name="chevronDown" size={16} />
+              </span>
+            </button>
+            <div className="order-acc-body" id={`order-${o._id}`}>
+              <div className="order-acc-inner">
+                <div className="order-acc-content">
+                  <div className="order-top">
+                    <div>
+                      <div className="id">შეკვეთა {number}</div>
+                      <div className="date">
+                        {new Date(o.createdAt).toLocaleDateString('ka-GE', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {o.payment?.status && (
+                        <span className={`pill ${paymentStatusPill[o.payment.status] || 'pill-neutral'}`}>
+                          {paymentMethodLabels[o.payment.method]} · {paymentStatusLabels[o.payment.status]}
+                        </span>
+                      )}
+                      {o.payment?.refundRequired && <span className="pill pill-warning">თანხა დაგიბრუნდებათ</span>}
+                      <span className={`pill ${statusPill[o.status] || 'pill-neutral'}`}>{statusLabels[o.status] || o.status}</span>
+                    </div>
+                  </div>
+                  <div className="order-delivery">
+                    <Icon name="pin" size={15} />
+                    {o.customerInfo?.address?.city}, {o.customerInfo?.address?.street}
+                    {o.delivery?.estimate && <span className="muted"> · {o.delivery.estimate}</span>}
+                  </div>
+                  <div className="order-lines">
+                    {o.items.map((it, idx) => (
+                      <div key={idx}>
+                        <span>
+                          {it.name} <span className="muted">× {it.quantity}</span>
+                        </span>
+                        <span>{formatPrice(it.price * it.quantity)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="order-total">
+                    <span>ჯამი</span>
+                    <span>{formatPrice(o.totalPrice)}</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {o.payment?.status && (
-                <span className={`pill ${paymentStatusPill[o.payment.status] || 'pill-neutral'}`}>
-                  {paymentMethodLabels[o.payment.method]} · {paymentStatusLabels[o.payment.status]}
-                </span>
-              )}
-              {o.payment?.refundRequired && <span className="pill pill-warning">თანხა დაგიბრუნდებათ</span>}
-              <span className={`pill ${statusPill[o.status] || 'pill-neutral'}`}>{statusLabels[o.status] || o.status}</span>
-            </div>
           </div>
-          <div className="order-delivery">
-            <Icon name="pin" size={15} />
-            {o.customerInfo?.address?.city}, {o.customerInfo?.address?.street}
-            {o.delivery?.estimate && <span className="muted"> · {o.delivery.estimate}</span>}
-          </div>
-          <div className="order-lines">
-            {o.items.map((it, idx) => (
-              <div key={idx}>
-                <span>
-                  {it.name} <span className="muted">× {it.quantity}</span>
-                </span>
-                <span>{formatPrice(it.price * it.quantity)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="order-total">
-            <span>ჯამი</span>
-            <span>{formatPrice(o.totalPrice)}</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };
@@ -142,14 +171,16 @@ const Profile = () => {
         </div>
       </div>
 
-      <Tabs
-        active={tab}
-        onChange={(t) => setParams(t === 'orders' ? { tab: 'orders' } : {})}
-        tabs={[
-          { id: 'info', label: 'პირადი ინფორმაცია', icon: 'user' },
-          { id: 'orders', label: 'ჩემი შეკვეთები', icon: 'receipt' },
-        ]}
-      />
+      <div className="profile-tabs">
+        <Tabs
+          active={tab}
+          onChange={(t) => setParams(t === 'orders' ? { tab: 'orders' } : {})}
+          tabs={[
+            { id: 'info', label: 'პირადი ინფორმაცია', icon: 'user' },
+            { id: 'orders', label: 'ჩემი შეკვეთები', icon: 'receipt' },
+          ]}
+        />
+      </div>
 
       {tab === 'orders' ? (
         <MyOrders />
@@ -204,6 +235,9 @@ const Profile = () => {
           </div>
         </form>
       )}
+
+      {/* ცალკე ფორმა — პროფილის მონაცემების შენახვა და პაროლის შეცვლა ერთმანეთს არ ერევა */}
+      {tab === 'info' && <ChangePasswordCard />}
     </div>
   );
 };

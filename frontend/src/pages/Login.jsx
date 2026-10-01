@@ -12,7 +12,8 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState('');
+  // პაროლის აღდგენის შემდეგ ელ. ფოსტა წინასწარ შევსებულია
+  const [email, setEmail] = useState(location.state?.email || '');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -107,6 +108,12 @@ const Login = () => {
           ჯერ არ გაქვთ ანგარიში?{' '}
           <Link to="/register" state={location.state} className="link">
             რეგისტრაცია
+          </Link>
+        </p>
+        <p className="auth-foot auth-foot-secondary">
+          ვერ შედიხართ ანგარიშზე?{' '}
+          <Link to="/forgot-password" className="link">
+            ანგარიშის აღდგენა
           </Link>
         </p>
       </form>
