@@ -1,5 +1,6 @@
-const nodemailer = require('nodemailer');
-const { BRAND_NAME } = require('../../constants/brand');
+const nodemailer = require("nodemailer");
+const dns = require("dns");
+const { BRAND_NAME } = require("../../constants/brand");
 
 /*
  * ერთადერთი ელ. ფოსტის სერვისი — ყველა წერილი (ვერიფიკაცია, შეკვეთის დადასტურება ...) იგზავნება
@@ -12,32 +13,33 @@ const { BRAND_NAME } = require('../../constants/brand');
 
 const decodeEntities = (s) =>
   s
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, " ")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
     .replace(/&#39;/g, "'")
-    .replace(/&amp;/g, '&');
+    .replace(/&amp;/g, "&");
 
 // ტექსტური ვერსია HTML-დან — გამოიყენება, თუ შაბლონი საკუთარ text-ს არ აწვდის
 const htmlToText = (html) =>
   decodeEntities(
     html
-      .replace(/<head[\s\S]*?<\/head>/gi, '')
-      .replace(/<style[\s\S]*?<\/style>/gi, '')
-      .replace(/<div[^>]*display:none[\s\S]*?<\/div>/gi, '')
-      .replace(/<(br|\/p|\/tr|\/h\d|\/div)>/gi, '\n')
-      .replace(/<[^>]*>/g, '')
+      .replace(/<head[\s\S]*?<\/head>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<div[^>]*display:none[\s\S]*?<\/div>/gi, "")
+      .replace(/<(br|\/p|\/tr|\/h\d|\/div)>/gi, "\n")
+      .replace(/<[^>]*>/g, ""),
   )
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n\s*\n+/g, '\n')
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n\s*\n+/g, "\n")
     .trim();
 
 // ლოგში მხოლოდ მიმღების დომენი — სრული მისამართი პერსონალური მონაცემია
-const recipientDomain = (to) => `*@${String(to).split('@')[1] || '?'}`;
+const recipientDomain = (to) => `*@${String(to).split("@")[1] || "?"}`;
 
 const isLogOnly = () =>
-  process.env.EMAIL_DELIVERY === 'log' || !(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  process.env.EMAIL_DELIVERY === "log" ||
+  !(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
 let transporter = null;
 const getTransporter = () => {
@@ -46,10 +48,17 @@ const getTransporter = () => {
     transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true',
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      secure: process.env.SMTP_SECURE === "true",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
       connectionTimeout: 10000,
       socketTimeout: 15000,
+
+      lookup: (hostname, options, callback) => {
+        dns.lookup(hostname, { family: 4 }, callback);
+      },
     });
   }
   return transporter;
@@ -59,7 +68,9 @@ const getTransporter = () => {
 const senderIdentity = () => ({
   from: { name: BRAND_NAME, address: process.env.SMTP_USER },
   // არასავალდებულო: პასუხები სხვა (მაგ. support@) მისამართზე
-  ...(process.env.EMAIL_REPLY_TO ? { replyTo: process.env.EMAIL_REPLY_TO } : {}),
+  ...(process.env.EMAIL_REPLY_TO
+    ? { replyTo: process.env.EMAIL_REPLY_TO }
+    : {}),
 });
 
 /**
@@ -82,26 +93,28 @@ const buildMessage = ({ to, subject, html, text }) => ({
   html,
 });
 
-const sendEmail = async ({ type = 'generic', ...content }) => {
+const sendEmail = async ({ type = "generic", ...content }) => {
   const message = buildMessage(content);
   const { to } = message;
   const t = getTransporter();
 
   if (!t) {
     // SMTP-ის გარეშე (development / EMAIL_DELIVERY=log) კონსოლი არის „მიწოდების არხი" — სრული ტექსტი იბეჭდება
-    console.log(`\n======================================\n[MOCK EMAIL] type=${type}\nTo: ${to}\nSubject: ${message.subject}\n\n${message.text}\n======================================\n`);
+    console.log(
+      `\n======================================\n[MOCK EMAIL] type=${type}\nTo: ${to}\nSubject: ${message.subject}\n\n${message.text}\n======================================\n`,
+    );
     return { sent: false, mock: true };
   }
 
   try {
     const info = await t.sendMail(message);
     console.log(
-      `[email] type=${type} to=${recipientDomain(to)} result=sent messageId=${info.messageId} response="${String(info.response || '').slice(0, 120)}"`
+      `[email] type=${type} to=${recipientDomain(to)} result=sent messageId=${info.messageId} response="${String(info.response || "").slice(0, 120)}"`,
     );
     return { sent: true, messageId: info.messageId };
   } catch (error) {
     console.error(
-      `[email] type=${type} to=${recipientDomain(to)} result=failed code=${error.code || '-'} responseCode=${error.responseCode || '-'} error="${error.message}"`
+      `[email] type=${type} to=${recipientDomain(to)} result=failed code=${error.code || "-"} responseCode=${error.responseCode || "-"} error="${error.message}"`,
     );
     return { sent: false, error: error.message };
   }
