@@ -37,6 +37,18 @@ const userSchema = new mongoose.Schema(
 
     isActive: { type: Boolean, default: true },
 
+    // რჩეულები (Wishlist) — მხოლოდ პროდუქტის მითითება და დამატების დრო (services/wishlist.js)
+    wishlist: {
+      type: [
+        {
+          _id: false,
+          product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
+          addedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
+
     // პაროლის ბოლო ცვლილება — ამაზე ადრე გაცემული JWT-ები აღარ მოქმედებს (middleware/auth.js)
     passwordChangedAt: { type: Date, select: false },
   },
@@ -47,6 +59,8 @@ const userSchema = new mongoose.Schema(
       transform: (doc, ret) => {
         delete ret.password;
         delete ret.passwordChangedAt;
+        // რჩეულები ცალკე API-თია (wishlist-*) — პროფილის/ადმინის პასუხებს არ ამძიმებს
+        delete ret.wishlist;
         return ret;
       },
     },

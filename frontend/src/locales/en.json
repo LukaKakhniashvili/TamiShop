@@ -395,7 +395,15 @@
     "noOrdersText": "When you place your first order, it will appear here.",
     "startShopping": "Start shopping",
     "order": "Order {{number}}",
-    "refundPending": "Refund pending"
+    "refundPending": "Refund pending",
+    "tracking": {
+      "title": "Order status",
+      "pending": "Order received",
+      "processing": "Order is being processed",
+      "shipped": "Order has been shipped",
+      "completed": "Order completed",
+      "cancelled": "Order cancelled"
+    }
   },
   "auth": {
     "email": "Email",
@@ -542,7 +550,9 @@
       "VARIANT_INACTIVE": "This option is unavailable: {{product}}",
       "OUT_OF_STOCK": "Not enough stock: {{product}}",
       "ORDER_NOT_FOUND": "Order not found",
-      "NOT_CANCELLABLE": "This order has already been confirmed and can't be cancelled here"
+      "NOT_CANCELLABLE": "This order has already been confirmed and can't be cancelled here",
+      "WISHLIST_FULL": "Your Wishlist can hold up to {{max}} products",
+      "INVALID_PRODUCT": "Invalid product"
     }
   },
   "accessGate": {
@@ -555,5 +565,61 @@
     "required": "Please enter the access code",
     "invalid": "Invalid access code",
     "footer": "Restricted development access"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "metaTitle": "Notifications",
+    "subtitle": "Order updates, offers and news",
+    "bell": "Notifications",
+    "unreadCount_one": "{{count}} unread",
+    "unreadCount_other": "{{count}} unread",
+    "viewAll": "View all notifications",
+    "markAllRead": "Mark all as read",
+    "markRead": "Mark as read",
+    "unread": "Unread",
+    "emptyTitle": "No notifications yet",
+    "emptyText": "Order updates and offers will appear here.",
+    "loadFailed": "Couldn't load notifications",
+    "loadMore": "Show more",
+    "allRead": "All notifications are marked as read",
+    "actionFailed": "The action couldn't be completed",
+    "justNow": "just now",
+    "types": {
+      "order": "Order",
+      "marketing": "News",
+      "promotion": "Offer",
+      "system": "System"
+    },
+    "templates": {
+      "order_received": {
+        "title": "Order received"
+      },
+      "order_status": {
+        "processing": "Your order is being processed",
+        "shipped": "Your order has been shipped",
+        "completed": "Your order has been completed",
+        "cancelled": "Your order has been cancelled"
+      },
+      "orderMessage": "Order {{orderNumber}}"
+    }
+  },
+  "wishlist": {
+    "title": "Wishlist",
+    "add": "Add to Wishlist",
+    "remove": "Remove from Wishlist",
+    "inWishlist": "In Wishlist",
+    "added": "Added to Wishlist",
+    "removed": "Removed from Wishlist",
+    "loginRequired": "Log in to save products to your Wishlist",
+    "emptyTitle": "Your Wishlist is empty",
+    "emptyText": "Save products you like and find them here later.",
+    "browse": "Browse products",
+    "loadFailed": "Couldn't load your Wishlist",
+    "actionFailed": "Couldn't save the change. Please try again.",
+    "addToCart": "Add to cart",
+    "count_one": "{{count}} product",
+    "count_other": "{{count}} products",
+    "headerLabel_one": "Wishlist ({{count}} item)",
+    "headerLabel_other": "Wishlist ({{count}} items)"
   }
 }

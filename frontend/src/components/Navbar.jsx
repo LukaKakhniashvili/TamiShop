@@ -5,6 +5,8 @@ import { useCart } from '../context/CartContext';
 import { useToast } from '../context/UIContext';
 import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
+import NotificationBell from './NotificationBell';
+import { useWishlist } from '../context/WishlistContext';
 import Icon from './Icon';
 import { getInitials } from './ui';
 import { BRAND } from '../constants';
@@ -75,7 +77,7 @@ const SearchBox = ({ className = '' }) => {
 };
 
 // ანგარიშის მენიუ — დესკტოპზე სახელით, მობილურზე კომპაქტური ავატარით (CSS); ორივეგან ერთი და იგივე გასვლის ლოგიკა
-const UserMenu = ({ user, onLogout }) => {
+const UserMenu = ({ user, onLogout, theme, onToggleTheme }) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -125,6 +127,15 @@ const UserMenu = ({ user, onLogout }) => {
           <Link to="/profile?tab=orders" className="dropdown-item" role="menuitem">
             <Icon name="receipt" size={18} /> {t('nav.myOrders')}
           </Link>
+          <Link to="/profile?tab=wishlist" className="dropdown-item" role="menuitem">
+            <Icon name="heart" size={18} /> {t('wishlist.title')}
+          </Link>
+          <Link to="/notifications" className="dropdown-item" role="menuitem">
+            <Icon name="bell" size={18} /> {t('notifications.title')}
+          </Link>
+          <button type="button" className="dropdown-item theme-item" role="menuitem" onClick={onToggleTheme}>
+            <Icon name={theme === 'light' ? 'moon' : 'sun'} size={18} /> {theme === 'light' ? t('nav.darkTheme') : t('nav.lightTheme')}
+          </button>
           {isStaff && (
             <Link to="/admin" className="dropdown-item" role="menuitem">
               <Icon name="dashboard" size={18} /> {t('nav.adminPanel')}
@@ -150,6 +161,7 @@ const Navbar = () => {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const { totalItems } = useCart();
+  const { count: wishlistCount } = useWishlist();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -194,7 +206,7 @@ const Navbar = () => {
 
             <SearchBox className="desktop" />
 
-            <div className="nav-actions">
+            <div className={`nav-actions ${user ? 'has-user' : ''}`}>
               <LanguageSwitcher />
               <button
                 onClick={toggleTheme}
@@ -207,6 +219,17 @@ const Navbar = () => {
                 </span>
               </button>
 
+              {user && (
+                <Link to="/profile?tab=wishlist" className="icon-btn cart-btn wish-link nav-desktop-only" aria-label={t('wishlist.headerLabel', { count: wishlistCount })} title={t('wishlist.title')}>
+                  <Icon name="heart" size={20} />
+                  {wishlistCount > 0 && (
+                    <span className="count" key={wishlistCount}>
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               <Link to="/cart" className="icon-btn cart-btn nav-desktop-only" aria-label={t('nav.cartWithCount', { count: totalItems })}>
                 <Icon name="cart" size={21} />
                 {totalItems > 0 && (
@@ -216,9 +239,11 @@ const Navbar = () => {
                 )}
               </Link>
 
+              {user && <NotificationBell />}
+
               {user ? (
                 // მობილურზეც ჩანს (კომპაქტური ავატარი) — იქ ერთადერთი გზაა გასვლისთვის
-                <UserMenu user={user} onLogout={handleLogout} />
+                <UserMenu user={user} onLogout={handleLogout} theme={theme} onToggleTheme={toggleTheme} />
               ) : (
                 <div className="nav-desktop-only">
                   <Link to="/login" className="btn btn-dark btn-sm" style={{ marginLeft: 8 }}>

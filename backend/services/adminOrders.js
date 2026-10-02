@@ -3,6 +3,7 @@ const Order = require('../models/Order');
 const httpError = require('../utils/httpError');
 const { cancelUnpaidOrder } = require('./orderPayments');
 const { releaseStock, orderStockLines } = require('./productVariants');
+const { orderStatusChanged } = require('./notifications/orderEvents');
 const { DELIVERY_METHODS, PAYMENT_METHODS } = require('../constants/checkout');
 const {
   NEXT_STATUS,
@@ -59,6 +60,8 @@ const advanceOrderStatus = async (orderId, requestedStatus, actorId) => {
     { new: true }
   );
   if (!updated) throw httpError(409, 'შეკვეთის სტატუსი უკვე შეიცვალა. განაახლეთ სია.', { code: 'STATUS_CHANGED' });
+  // შეტყობინება (in-app + email) — მხოლოდ წარმატებული გადასვლის შემდეგ, ფონურად
+  orderStatusChanged(updated, expected);
   return updated;
 };
 
@@ -99,6 +102,7 @@ const cancelOrderByAdmin = async (orderId, actorId) => {
   );
   if (!updated) throw httpError(409, 'შეკვეთის სტატუსი უკვე შეიცვალა. განაახლეთ სია.', { code: 'STATUS_CHANGED' });
   if (order.inventory?.reserved) await releaseStock(orderStockLines(order));
+  orderStatusChanged(updated, 'cancelled');
   return updated;
 };
 

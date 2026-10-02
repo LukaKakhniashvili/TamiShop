@@ -32,6 +32,17 @@ const MESSAGES = {
       ignoreNote: 'თუ პაროლის აღდგენა თქვენ არ მოგითხოვიათ, უბრალოდ უგულებელყავით ეს წერილი — პაროლი არ შეიცვლება.',
       footerNote: `ეს წერილი გამოგზავნილია, რადგან ამ მისამართისთვის მოთხოვნილ იქნა პაროლის აღდგენა ${B}-ზე.`,
     },
+    orderStatus: {
+      subject: (n, label) => `შეკვეთა ${n} — ${label} — ${B}`,
+      heading: { processing: 'შეკვეთა მუშავდება', shipped: 'შეკვეთა გაგზავნილია', completed: 'შეკვეთა დასრულებულია', cancelled: 'შეკვეთა გაუქმებულია' },
+      text: {
+        processing: (n) => `თქვენი შეკვეთა ${n} დამუშავების პროცესშია.`,
+        shipped: (n) => `თქვენი შეკვეთა ${n} გადაეცა კურიერს და მალე მოგივათ.`,
+        completed: (n) => `თქვენი შეკვეთა ${n} ჩაბარებულია. გმადლობთ, რომ ჩვენ აგვირჩიეთ!`,
+        cancelled: (n) => `თქვენი შეკვეთა ${n} გაუქმდა. კითხვების შემთხვევაში დაგვიკავშირდით.`,
+      },
+      footerNote: `ეს წერილი გამოგზავნილია, რადგან ${B}-ზე თქვენი შეკვეთის სტატუსი შეიცვალა.`,
+    },
     order: {
       subject: (n) => `შეკვეთა ${n} მიღებულია — ${B}`,
       title: (n) => `შეკვეთა ${n}`,
@@ -99,6 +110,17 @@ const MESSAGES = {
       instruction: 'Use this code to continue:',
       ignoreNote: "If you didn't request a password recovery, simply ignore this email — your password won't change.",
       footerNote: `You received this email because a password recovery was requested for this address at ${B}.`,
+    },
+    orderStatus: {
+      subject: (n, label) => `Order ${n} — ${label} — ${B}`,
+      heading: { processing: 'Your order is being processed', shipped: 'Your order has been shipped', completed: 'Your order is complete', cancelled: 'Your order has been cancelled' },
+      text: {
+        processing: (n) => `Your order ${n} is now being processed.`,
+        shipped: (n) => `Your order ${n} has been handed to the courier and is on its way.`,
+        completed: (n) => `Your order ${n} has been delivered. Thank you for shopping with us!`,
+        cancelled: (n) => `Your order ${n} has been cancelled. Please contact us if you have any questions.`,
+      },
+      footerNote: `You received this email because the status of your order at ${B} changed.`,
     },
     order: {
       subject: (n) => `Order ${n} received — ${B}`,
@@ -170,6 +192,17 @@ const MESSAGES = {
       instruction: 'Чтобы продолжить, введите этот код:',
       ignoreNote: 'Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо — пароль не изменится.',
       footerNote: `Вы получили это письмо, потому что для этого адреса было запрошено восстановление пароля в ${B}.`,
+    },
+    orderStatus: {
+      subject: (n, label) => `Заказ ${n} — ${label} — ${B}`,
+      heading: { processing: 'Заказ обрабатывается', shipped: 'Заказ отправлен', completed: 'Заказ завершён', cancelled: 'Заказ отменён' },
+      text: {
+        processing: (n) => `Ваш заказ ${n} находится в обработке.`,
+        shipped: (n) => `Ваш заказ ${n} передан курьеру и скоро будет у вас.`,
+        completed: (n) => `Ваш заказ ${n} доставлен. Спасибо, что выбрали нас!`,
+        cancelled: (n) => `Ваш заказ ${n} отменён. Если у вас есть вопросы, свяжитесь с нами.`,
+      },
+      footerNote: `Вы получили это письмо, потому что статус вашего заказа в ${B} изменился.`,
     },
     order: {
       subject: (n) => `Заказ ${n} принят — ${B}`,

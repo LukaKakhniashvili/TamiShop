@@ -15,6 +15,9 @@ const locales = Object.fromEntries(LANGS.map((l) => [l, JSON.parse(fs.readFileSy
 
 // ცნობილი დინამიკური სიმრავლეები (ენუმები/id-ები)
 const DYNAMIC = {
+  'profile.tracking.*': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
+  'notifications.types.*': ['order', 'marketing', 'promotion', 'system'],
+  'notifications.templates.order_status.*': ['processing', 'shipped', 'completed', 'cancelled'],
   'orderStatus.*': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
   'paymentStatus.*': ['pending', 'paid', 'pay_on_delivery', 'failed', 'cancelled', 'refunded'],
   'paymentMethodShort.*': ['card', 'cod'],
@@ -40,7 +43,7 @@ const DYNAMIC = {
     'CURRENT_PASSWORD_INCORRECT', 'PASSWORD_MISMATCH', 'SAME_PASSWORD', 'INVALID_EMAIL', 'EMAIL_NOT_FOUND', 'EMAIL_EXISTS',
     'ACCOUNT_DISABLED', 'ACCOUNT_UNAVAILABLE', 'RESET_TOKEN_INVALID', 'GOOGLE_FAILED', 'REQUIRED_FIELDS', 'INVALID_CREDENTIALS',
     'UNAUTHORIZED', 'PRODUCT_UNAVAILABLE', 'VARIANT_REQUIRED', 'VARIANT_NOT_FOUND', 'VARIANT_INACTIVE', 'OUT_OF_STOCK',
-    'ORDER_NOT_FOUND', 'NOT_CANCELLABLE',
+    'ORDER_NOT_FOUND', 'NOT_CANCELLABLE', 'WISHLIST_FULL', 'INVALID_PRODUCT',
   ],
 };
 

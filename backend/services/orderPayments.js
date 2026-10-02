@@ -3,6 +3,7 @@ const User = require('../models/User');
 const { reserveStock, orderStockLines } = require('./productVariants');
 const { getPaymentProvider } = require('./payments');
 const emailService = require('./email/emailService');
+const { orderReceived } = require('./notifications/orderEvents');
 
 const CURRENCY = 'GEL';
 
@@ -36,6 +37,8 @@ const applyConfirmedOrderEffects = async (order) => {
   sendOrderConfirmationEmail(order).catch((err) =>
     console.error(`[email] order confirmation for ${order.orderNumber} failed:`, err.message)
   );
+  // Notification Center — „შეკვეთა მიღებულია" (in-app; ელ. წერილი — ზემოთ, არსებული დადასტურებით)
+  orderReceived(order);
 };
 
 /**

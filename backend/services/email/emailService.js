@@ -1,5 +1,5 @@
 const { sendEmail } = require('./mailer');
-const { verificationEmail, passwordResetEmail, orderConfirmationEmail } = require('./templates');
+const { verificationEmail, passwordResetEmail, orderConfirmationEmail, orderStatusEmail } = require('./templates');
 
 /*
  * ტრანზაქციული წერილები — ყველა იყენებს ერთსა და იმავე sendEmail-ს (transporter, გამგზავნი,
@@ -19,4 +19,8 @@ const sendPasswordResetEmail = ({ to, code, expiresInMinutes, lng }) =>
 const sendOrderConfirmationEmail = ({ to, order, orderUrl, lng }) =>
   sendEmail({ type: 'order_confirmation', to, ...orderConfirmationEmail({ order, orderUrl, lng: lng || order.language }) });
 
-module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendOrderConfirmationEmail };
+/** შეკვეთის სტატუსის ცვლილება (Notification Center-ის email არხი) */
+const sendOrderStatusEmail = ({ to, order, status, orderUrl, lng }) =>
+  sendEmail({ type: 'order_status', to, ...orderStatusEmail({ order, status, orderUrl, lng: lng || order.language }) });
+
+module.exports = { sendVerificationEmail, sendPasswordResetEmail, sendOrderConfirmationEmail, sendOrderStatusEmail };

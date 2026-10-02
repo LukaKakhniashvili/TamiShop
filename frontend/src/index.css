@@ -1847,6 +1847,37 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
 .order-delivery { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); flex-wrap: wrap; }
 .order-delivery svg { color: var(--muted); }
 .order-lines { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--text-2); }
+
+/* შეკვეთის თვალთვალი (My Orders) — დესკტოპზე ჰორიზონტალური, მობილურზე ვერტიკალური */
+.order-track-title { font-size: 12px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.order-track-steps { list-style: none; margin: 0; padding: 0; display: flex; }
+.order-track-step { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; min-width: 0; }
+.order-track-step + .order-track-step::before {
+  content: ''; position: absolute; top: 10px; right: calc(50% + 14px); left: calc(-50% + 14px); height: 2px; border-radius: 2px; background: var(--border);
+}
+/* მწვანე ხაზი — მხოლოდ მიღწეულ ეტაპამდე (გაუქმებისას შემდეგი ეტაპები ნაცრისფერია) */
+.order-track-step.done + .order-track-step:is(.done, .current)::before { background: var(--success); }
+.order-track-dot {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+  border: 2px solid var(--border-strong); background: var(--surface); color: #fff;
+}
+.order-track-step.done .order-track-dot { background: var(--success); border-color: var(--success); }
+.order-track-step.current .order-track-dot { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); background: var(--accent); }
+.order-track-step.cancelled .order-track-dot { background: var(--danger); border-color: var(--danger); }
+.order-track-text { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; line-height: 1.35; }
+.order-track-label { font-weight: 700; color: var(--text); }
+.order-track-step.upcoming .order-track-label { color: var(--muted); font-weight: 600; }
+.order-track-step.current .order-track-label { color: var(--accent-ink); }
+.order-track-step.cancelled .order-track-label { color: var(--danger); }
+.order-track-text time { color: var(--muted); font-size: 12px; }
+.order-track-steps.is-cancelled .order-track-step.upcoming { opacity: 0.55; }
+@media (max-width: 720px) {
+  .order-track-steps { flex-direction: column; gap: 14px; }
+  .order-track-step { flex-direction: row; align-items: flex-start; text-align: left; gap: 10px; }
+  .order-track-step + .order-track-step::before { display: none; }
+  .order-track-step:not(:last-child)::after { content: ''; position: absolute; left: 10px; top: 26px; bottom: -12px; width: 2px; border-radius: 2px; background: var(--border); }
+  .order-track-step.done:has(+ .order-track-step:is(.done, .current))::after { background: var(--success); }
+}
 .order-lines div { display: flex; justify-content: space-between; gap: 12px; }
 .order-total { display: flex; justify-content: space-between; border-top: 1px solid var(--border); padding-top: 12px; font-weight: 800; }
 
@@ -2545,4 +2576,132 @@ button.chip-accent:hover { background: var(--accent-soft); filter: brightness(0.
   .lang-trigger .chev { display: none; }
   .user-trigger { padding: 0 4px; gap: 4px; }
   .user-trigger .name { display: none; }
+}
+
+/* ==========================================================================
+   Notification Center — ზარი, dropdown, შეტყობინებები, სრული გვერდი, ადმინის კამპანიები
+   ========================================================================== */
+.notif-bell { position: relative; }
+.notif-trigger .count {
+  position: absolute; top: 3px; right: 1px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 99px;
+  background: var(--accent); color: var(--accent-text); font-size: 11px; font-weight: 800; display: grid; place-items: center;
+  border: 2px solid var(--bg); animation: bump 450ms var(--ease-spring);
+}
+.notif-menu { width: 360px; padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.notif-menu-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.notif-menu-head strong { font-size: 15px; }
+.notif-mark-all { font-size: 12.5px; font-weight: 700; background: none; border: none; cursor: pointer; color: var(--accent-ink); padding: 0; }
+.notif-menu-list { max-height: min(420px, 60vh); overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.notif-menu-state { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 26px 12px; color: var(--muted); font-size: 14px; text-align: center; }
+.notif-menu-all { display: block; text-align: center; padding: 11px; font-size: 13.5px; font-weight: 700; color: var(--accent-ink); border-top: 1px solid var(--border); }
+.notif-menu-all:hover { background: var(--surface-2); }
+
+.notif-item {
+  display: flex; align-items: flex-start; gap: 12px; width: 100%; padding: 12px; border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--text); text-align: left; cursor: pointer; transition: background-color var(--dur-fast) ease;
+}
+.notif-item:hover { background: var(--surface-2); }
+.notif-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.notif-item.is-unread { background: var(--accent-soft); }
+.notif-item.is-unread:hover { background: color-mix(in srgb, var(--accent-soft) 70%, var(--surface-2)); }
+.notif-icon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; background: var(--surface-2); color: var(--text-2); }
+.notif-icon.type-order { background: var(--success-soft); color: var(--success); }
+.notif-icon.type-promotion { background: var(--accent-soft); color: var(--accent-ink); }
+.notif-item.is-unread .notif-icon { background: var(--surface); }
+.notif-body { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.notif-title { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.notif-item.is-unread .notif-title { font-weight: 800; }
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.notif-message { font-size: 13px; color: var(--text-2); line-height: 1.45; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow-wrap: anywhere; }
+.notif-meta { display: flex; gap: 6px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.notif-go { color: var(--muted); margin-top: 8px; flex-shrink: 0; }
+.notif-item.compact { padding: 10px; gap: 10px; }
+.notif-item.compact .notif-icon { width: 30px; height: 30px; }
+
+.notif-page { max-width: 860px; }
+.notif-list { padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+.notif-list .notif-message { -webkit-line-clamp: 4; }
+.notif-more { display: flex; justify-content: center; margin-top: 16px; }
+
+/* My Orders: შეტყობინებიდან გადმოსვლისას შეკვეთა მოკლედ გამოიყოფა */
+.order-card.is-highlighted { box-shadow: 0 0 0 2px var(--accent), var(--shadow-lg); transition: box-shadow 400ms ease; }
+
+/* ანგარიშის მენიუში თემის გადართვა — მხოლოდ ვიწრო ეკრანზე (იქ header-ში ზარს უთმობს ადგილს) */
+.user-menu .dropdown-item.theme-item { display: none; }
+
+/* ადმინი → შეტყობინებები */
+.nc-form { margin-bottom: 18px; }
+.nc-modes { display: flex; flex-wrap: wrap; gap: 8px; }
+.nc-mode {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid var(--border); border-radius: var(--radius-full);
+  background: var(--surface); font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.nc-mode.selected { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-ink); }
+.nc-mode input { accent-color: var(--accent); }
+.nc-picker { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.nc-results { border: 1px solid var(--border); border-radius: var(--radius-sm); max-height: 240px; overflow-y: auto; background: var(--surface); }
+.nc-results-state { padding: 12px; font-size: 13px; }
+.nc-result { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 10px 12px; border: none; border-bottom: 1px solid var(--border); background: none; color: var(--text); text-align: left; cursor: pointer; }
+.nc-result:last-child { border-bottom: none; }
+.nc-result:hover:not(:disabled) { background: var(--surface-2); }
+.nc-result span { display: flex; flex-direction: column; min-width: 0; }
+.nc-result small { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nc-result.picked { color: var(--success); cursor: default; }
+.nc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.nc-chip { display: inline-flex; align-items: center; gap: 6px; }
+.nc-chip button { border: none; background: none; cursor: pointer; color: inherit; display: grid; place-items: center; padding: 0; }
+.nc-summary { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-sm); background: var(--surface-2); font-size: 13.5px; line-height: 1.5; }
+.nc-summary.all { background: var(--danger-soft); color: var(--danger); }
+.nc-link { display: block; font-weight: 400; font-size: 12px; }
+.nc-history .nowrap { white-space: nowrap; }
+
+@media (max-width: 720px) {
+  .notif-menu { position: fixed; top: calc(var(--nav-h) + 4px); left: 12px; right: 12px; width: auto; max-width: none; }
+  .notif-trigger { width: 40px; height: 44px; }
+}
+/* ვიწრო ეკრანზე ავტორიზებულის header-ში: თემის ღილაკი ანგარიშის მენიუში გადადის, ზარს ადგილი რჩება */
+@media (max-width: 420px) {
+  .nav-actions.has-user .theme-toggle { display: none; }
+  .user-menu .dropdown-item.theme-item { display: flex; }
+}
+
+/* ==========================================================================
+   Wishlist / რჩეულები — გული ბარათზე, პროდუქტის გვერდზე და header-ში
+   ========================================================================== */
+.pc-wish {
+  position: absolute; top: 10px; right: 10px; z-index: 3; width: 38px; height: 38px; border-radius: 50%;
+  display: grid; place-items: center; border: none; cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--text-2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12); transition: transform var(--dur-fast) var(--ease-spring), color var(--dur-fast) ease;
+}
+.pc-wish:hover { color: var(--danger); transform: scale(1.08); }
+.pc-wish:active { transform: scale(0.92); }
+.pc-wish:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pc-wish.active { color: var(--danger); }
+.pc-wish.active svg, .wish-btn.active svg, .wish-link svg { transition: fill var(--dur-fast) ease; }
+.pc-wish.active svg, .wish-btn.active svg { fill: currentColor; }
+.pc-wish.active { animation: bump 450ms var(--ease-spring); }
+
+.wish-btn { gap: 8px; }
+.pd-buy .wish-btn { flex: 0 0 auto; }
+.wish-btn.active { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); background: var(--danger-soft); }
+.wish-link .count { background: var(--danger); }
+.wishlist-count { margin: 0 0 12px; font-size: 14px; }
+
+@media (max-width: 720px) {
+  .pc-wish { width: 36px; height: 36px; top: 8px; right: 8px; }
+  .pd-buy .wish-btn span { display: none; }
+  .pd-buy .wish-btn { flex: 0 0 52px; width: 52px; padding: 0; justify-content: center; }
+}
+
+/* პროდუქტის გვერდი: სურათზე გული — მხოლოდ ვიწრო ტელეფონზე (≤420), იქ ყიდვის რიგიდან ქრება */
+.pd-wish-mobile { display: none; }
+@media (max-width: 420px) {
+  .pd-wish-mobile { display: grid; }
+  .pd-buy .wish-btn { display: none; }
+}
+/* პლანშეტი (≤1000px): ავტორიზებულის header-ში ახალი ღილაკებისთვის (რჩეულები, ზარი) — თემის გადართვა ანგარიშის მენიუშია */
+@media (max-width: 1000px) {
+  .nav-actions.has-user .theme-toggle { display: none; }
+  .user-menu .dropdown-item.theme-item { display: flex; }
 }

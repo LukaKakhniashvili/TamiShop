@@ -237,4 +237,49 @@ const orderConfirmationEmail = ({ order, orderUrl, lng = order.language }) => {
   };
 };
 
-module.exports = { verificationEmail, passwordResetEmail, orderConfirmationEmail };
+// ---------------------------------------------------------------------------
+// შეკვეთის სტატუსის ცვლილება (processing / shipped / completed / cancelled)
+// ---------------------------------------------------------------------------
+
+/**
+ * @param {object} p
+ * @param {object} p.order    — Order (plain object)
+ * @param {string} p.status   — ახალი სტატუსი
+ * @param {string} p.orderUrl — ბმული შეკვეთაზე (My Orders)
+ * @param {string} [p.lng]    — ენა (ნაგულისხმევად order.language → ka)
+ */
+const orderStatusEmail = ({ order, status, orderUrl, lng = order.language }) => {
+  const m = emailMessages(lng);
+  const t = m.orderStatus;
+  const label = m.order.orderStatuses[status] || status;
+  const heading = t.heading[status] || label;
+  const text = (t.text[status] || (() => ''))(order.orderNumber);
+  const isCancelled = status === 'cancelled';
+
+  const body = `
+    <tr><td class="px" style="padding:34px 40px 8px 40px;">
+      <h1 class="h1" style="margin:0 0 12px 0;font:800 26px/1.25 ${F};color:${BRAND.ink};">${esc(heading)}</h1>
+      <p style="margin:0;font:400 15px/1.65 ${F};color:${BRAND.text};">${esc(text)}</p>
+    </td></tr>
+    <tr><td class="px" style="padding:20px 40px 0 40px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${row(esc(m.order.orderNumber), esc(order.orderNumber))}
+        ${row(esc(m.order.orderStatus), esc(label), { color: isCancelled ? '#b42318' : BRAND.success })}
+        ${row(esc(m.order.total), money(order.totalPrice), { strong: true })}
+      </table>
+    </td></tr>
+    <tr><td class="px" align="center" style="padding:28px 40px 36px 40px;">
+      <table role="presentation" cellpadding="0" cellspacing="0"><tr>
+        <td bgcolor="${BRAND.accent}" style="background:${BRAND.accent};border-radius:12px;">
+          <a href="${esc(orderUrl)}" style="display:inline-block;padding:14px 28px;font:700 15px ${F};color:#ffffff;text-decoration:none;">${esc(m.order.viewOrders)}</a>
+        </td>
+      </tr></table>
+    </td></tr>`;
+
+  return {
+    subject: t.subject(order.orderNumber, label),
+    html: renderLayout({ title: heading, preheader: text, body, footerNote: esc(t.footerNote), lang: m.htmlLang, rights: m.rights }),
+  };
+};
+
+module.exports = { verificationEmail, passwordResetEmail, orderConfirmationEmail, orderStatusEmail };

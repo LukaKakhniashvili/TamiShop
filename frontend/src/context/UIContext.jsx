@@ -65,7 +65,7 @@ const ConfirmDialog = ({ options, onResult }) => {
     <div className="dialog-backdrop" onMouseDown={() => onResult(false)}>
       <div className="dialog" role="alertdialog" aria-modal="true" onMouseDown={(e) => e.stopPropagation()}>
         <div className="dialog-icon">
-          <Icon name={options.danger === false ? 'info' : 'trash'} size={22} />
+          <Icon name={options.icon || (options.danger === false ? 'info' : 'trash')} size={22} />
         </div>
         <h3>{options.title}</h3>
         {options.message && <p>{options.message}</p>}

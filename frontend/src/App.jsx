@@ -15,6 +15,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
+import Notifications from './pages/Notifications';
+import AdminNotifications from './pages/admin/AdminNotifications';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -77,6 +79,14 @@ function App() {
             }
           />
           <Route
+            path="/notifications"
+            element={
+              <PrivateRoute>
+                <Notifications />
+              </PrivateRoute>
+            }
+          />
+          <Route
             path="/profile"
             element={
               <PrivateRoute>
@@ -98,6 +108,7 @@ function App() {
             <Route path="categories" element={<AdminCategories />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="notifications" element={<AdminNotifications />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

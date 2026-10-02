@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useCart } from '../context/CartContext';
 import { useLocalized } from '../i18n/content';
 import Icon from './Icon';
+import WishlistButton from './WishlistButton';
 import { Price, formatPrice, productDiscount } from './ui';
 
 const PLACEHOLDER = 'https://placehold.co/400x400?text=No+Image';
@@ -53,6 +54,7 @@ const ProductCard = ({ product, index = 0, highlight = false, rank }) => {
           {product.isNew && <span className="pc-badge new-badge">{t('product.new')}</span>}
           {!product.inStock && <span className="pc-badge muted-badge">{t('product.soldOut')}</span>}
         </div>
+        <WishlistButton productId={product._id} />
 
         <Link to={href} aria-label={name}>
           {images.map((src, i) => (

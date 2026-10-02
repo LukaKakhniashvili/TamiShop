@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { trackProductView } from '../utils/activity';
 import Icon from '../components/Icon';
 import VariantSelector from '../components/VariantSelector';
+import WishlistButton from '../components/WishlistButton';
 import { useTranslation } from 'react-i18next';
 import { localizedSpecs, useLocalized } from '../i18n/content';
 import useDocumentMeta from '../hooks/useDocumentMeta';
@@ -197,6 +198,8 @@ const ProductDetail = () => {
             <div className="pc-badges">
               {discount > 0 && <span className="pc-badge">-{discount}%</span>}
             </div>
+            {/* ვიწრო ეკრანზე გული სურათზეა (ყიდვის რიგში ადგილი არ არის) — იგივე საერთო მდგომარეობა */}
+            <WishlistButton productId={product._id} className="pd-wish-mobile" />
             <img
               key={currentIndex}
               src={images[currentIndex]}
@@ -304,6 +307,7 @@ const ProductDetail = () => {
               <Icon name="cartPlus" size={20} />
               {inStock && !noSuchCombo ? t('product.addToCart') : t('product.soldOut')}
             </button>
+            <WishlistButton productId={product._id} variant="button" />
           </div>
 
           <div className="pd-assure">

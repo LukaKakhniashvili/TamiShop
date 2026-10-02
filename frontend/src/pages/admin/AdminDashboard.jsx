@@ -8,6 +8,7 @@ const links = [
   { to: '/admin/categories', label: 'კატეგორიები', icon: 'tag' },
   { to: '/admin/orders', label: 'შეკვეთები', icon: 'receipt' },
   { to: '/admin/users', label: 'მომხმარებლები', icon: 'users' },
+  { to: '/admin/notifications', label: 'შეტყობინებები', icon: 'bell' },
 ];
 
 const AdminDashboard = () => {

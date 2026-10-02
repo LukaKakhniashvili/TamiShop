@@ -8,18 +8,71 @@ import Icon from '../components/Icon';
 import CitySelect, { cityLabel } from '../components/checkout/CitySelect';
 import ChangePasswordCard from '../components/ChangePasswordCard';
 import LineOptions from '../components/LineOptions';
+import ProductCard from '../components/ProductCard';
+import { useWishlist } from '../context/WishlistContext';
 import { EmptyState, Field, Tabs, formatPrice, getInitials } from '../components/ui';
 import { paymentStatusPill, statusPill } from '../constants';
-import { formatDate, useLocalized } from '../i18n/content';
+import { formatDate, formatDateTime, useLocalized } from '../i18n/content';
 import { apiErrorMessage } from '../i18n/errors';
 import useDocumentMeta from '../hooks/useDocumentMeta';
 
 // სტატუსები ბაზაში ინახება ენუმის გასაღებებით (pending, paid...) — ტექსტი თარგმანებიდან
+const TRACKING_FLOW = ['pending', 'processing', 'shipped', 'completed'];
+
+/**
+ * შეკვეთის თვალთვალი: pending → processing → shipped → completed (+ გაუქმება).
+ * pending-ის დრო — order.createdAt (statusHistory-ში არ ინახება), დანარჩენი — statusHistory[].at.
+ * გაუქმებისას მიღწეულად ითვლება მხოლოდ გაუქმებამდე გავლილი ეტაპები.
+ */
+const OrderTimeline = ({ order }) => {
+  const { t } = useTranslation();
+  const history = order.statusHistory || [];
+  const timeOf = (status) =>
+    status === 'pending' ? order.createdAt : [...history].reverse().find((h) => h.to === status)?.at;
+  const cancelled = order.status === 'cancelled';
+  const cancelEntry = cancelled ? [...history].reverse().find((h) => h.to === 'cancelled') : null;
+  // ბოლო მიღწეული ეტაპი: გაუქმებისას — სტატუსი გაუქმებამდე (from), თორემ — მიმდინარე სტატუსი
+  const reachedIndex = cancelled
+    ? Math.max(0, TRACKING_FLOW.indexOf(cancelEntry?.from), ...TRACKING_FLOW.map((s, i) => (i > 0 && timeOf(s) ? i : 0)))
+    : Math.max(0, TRACKING_FLOW.indexOf(order.status));
+
+  const steps = TRACKING_FLOW.map((status, i) => ({
+    status,
+    state: i < reachedIndex || (i === reachedIndex && (cancelled || status === 'completed')) ? 'done' : i === reachedIndex ? 'current' : 'upcoming',
+    at: i <= reachedIndex ? timeOf(status) : null,
+  }));
+  if (cancelled) steps.push({ status: 'cancelled', state: 'cancelled', at: cancelEntry?.at });
+
+  return (
+    <div className="order-track">
+      <div className="order-track-title">{t('profile.tracking.title')}</div>
+      <ol className={`order-track-steps ${cancelled ? 'is-cancelled' : ''}`}>
+        {steps.map((s) => (
+          <li key={s.status} className={`order-track-step ${s.state}`} aria-current={s.state === 'current' ? 'step' : undefined}>
+            <span className="order-track-dot" aria-hidden="true">
+              {s.state === 'done' && <Icon name="check" size={12} strokeWidth={3} />}
+              {s.state === 'cancelled' && <Icon name="x" size={12} strokeWidth={3} />}
+            </span>
+            <span className="order-track-text">
+              <span className="order-track-label">{t(`profile.tracking.${s.status}`)}</span>
+              {s.at && <time dateTime={new Date(s.at).toISOString()}>{formatDateTime(s.at)}</time>}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+};
+
 const MyOrders = ({ cities }) => {
   const { t, i18n } = useTranslation();
   const L = useLocalized();
   const [orders, setOrders] = useState(null);
   const [openId, setOpenId] = useState(null);
+  // შეტყობინებიდან გადმოსვლა (?order=<id>) — შეკვეთა იხსნება და ჩანს
+  const [params] = useSearchParams();
+  const focusId = params.get('order');
+  const [highlightId, setHighlightId] = useState(null);
 
   useEffect(() => {
     api
@@ -27,6 +80,18 @@ const MyOrders = ({ cities }) => {
       .then(({ data }) => setOrders(data))
       .catch(() => setOrders([]));
   }, []);
+
+  useEffect(() => {
+    if (!orders || !focusId || !orders.some((o) => o._id === focusId)) return undefined;
+    setOpenId(focusId);
+    setHighlightId(focusId);
+    const raf = requestAnimationFrame(() => document.getElementById(`order-card-${focusId}`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+    const timer = setTimeout(() => setHighlightId(null), 2600);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [orders, focusId]);
 
   if (!orders) {
     return (
@@ -56,7 +121,12 @@ const MyOrders = ({ cities }) => {
         const number = o.orderNumber || `#${o._id.slice(-6).toUpperCase()}`;
         const open = openId === o._id;
         return (
-          <div key={o._id} className={`card order-card order-acc reveal ${open ? 'open' : ''}`} style={{ '--i': i }}>
+          <div
+            key={o._id}
+            id={`order-card-${o._id}`}
+            className={`card order-card order-acc reveal ${open ? 'open' : ''} ${highlightId === o._id ? 'is-highlighted' : ''}`}
+            style={{ '--i': i }}
+          >
             {/* მობილურზე accordion: დახურულზე მხოლოდ ნომერი და ჯამი, ერთდროულად ერთი შეკვეთაა გახსნილი.
                 დესკტოპზე ეს სათაური დამალულია და დეტალები ყოველთვის ჩანს (CSS) */}
             <button
@@ -95,6 +165,7 @@ const MyOrders = ({ cities }) => {
                       <span className={`pill ${statusPill[o.status] || 'pill-neutral'}`}>{t(`orderStatus.${o.status}`, { defaultValue: o.status })}</span>
                     </div>
                   </div>
+                  <OrderTimeline order={o} />
                   <div className="order-delivery">
                     <Icon name="pin" size={15} />
                     {cityLabel(cities, o.customerInfo?.address?.city, i18n.language)}, {o.customerInfo?.address?.street}
@@ -125,13 +196,77 @@ const MyOrders = ({ cities }) => {
   );
 };
 
+/**
+ * Profile → რჩეულები: არსებული ProductCard (ფასი, ფასდაკლება, მარაგი, კალათა — ვარიანტების წესებით).
+ * სია მიმდინარე პროდუქტის მონაცემებით მოდის; გულით ამოღებული ბარათი სიიდან მაშინვე ქრება.
+ */
+const WishlistTab = () => {
+  const { t } = useTranslation();
+  const { ids, status: idsStatus } = useWishlist();
+  const [products, setProducts] = useState(null);
+  const [error, setError] = useState(false);
+
+  const load = () => {
+    setError(false);
+    api
+      .get('/wishlist-list')
+      .then(({ data }) => setProducts(data.products))
+      .catch(() => setError(true));
+  };
+  useEffect(load, []);
+
+  if (error) {
+    return (
+      <div className="card">
+        <EmptyState icon="alert" title={t('wishlist.loadFailed')} text={t('catalog.loadErrorText')}>
+          <button type="button" className="btn btn-primary" onClick={load}>
+            <Icon name="refresh" size={16} /> {t('common.retry')}
+          </button>
+        </EmptyState>
+      </div>
+    );
+  }
+  if (!products || idsStatus === 'loading') {
+    return (
+      <div className="product-grid">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="skeleton" style={{ aspectRatio: '3 / 4', borderRadius: 18 }} />
+        ))}
+      </div>
+    );
+  }
+  const idSet = new Set(ids);
+  const visible = products.filter((p) => idSet.has(String(p._id)));
+  if (!visible.length) {
+    return (
+      <div className="card">
+        <EmptyState icon="heart" title={t('wishlist.emptyTitle')} text={t('wishlist.emptyText')}>
+          <Link to="/products" className="btn btn-primary">
+            {t('wishlist.browse')} <Icon name="arrowRight" size={16} />
+          </Link>
+        </EmptyState>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <p className="muted wishlist-count">{t('wishlist.count', { count: visible.length })}</p>
+      <div className="product-grid wishlist-grid">
+        {visible.map((p, i) => (
+          <ProductCard key={p._id} product={p} index={i} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const Profile = () => {
   const { t } = useTranslation();
   useDocumentMeta(t('nav.myProfile'));
   const { user, updateProfile } = useAuth();
   const toast = useToast();
   const [params, setParams] = useSearchParams();
-  const tab = params.get('tab') === 'orders' ? 'orders' : 'info';
+  const tab = ['orders', 'wishlist'].includes(params.get('tab')) ? params.get('tab') : 'info';
 
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
@@ -186,16 +321,19 @@ const Profile = () => {
       <div className="profile-tabs">
         <Tabs
           active={tab}
-          onChange={(id) => setParams(id === 'orders' ? { tab: 'orders' } : {})}
+          onChange={(id) => setParams(id === 'info' ? {} : { tab: id })}
           tabs={[
             { id: 'info', label: t('profile.personalInfo'), icon: 'user' },
             { id: 'orders', label: t('nav.myOrders'), icon: 'receipt' },
+            { id: 'wishlist', label: t('wishlist.title'), icon: 'heart' },
           ]}
         />
       </div>
 
       {tab === 'orders' ? (
         <MyOrders cities={cities} />
+      ) : tab === 'wishlist' ? (
+        <WishlistTab />
       ) : (
         <form className="form-stack" onSubmit={handleSubmit}>
           <section className="card card-pad">

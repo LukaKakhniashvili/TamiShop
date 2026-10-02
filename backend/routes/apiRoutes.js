@@ -16,6 +16,8 @@ const products = require('../controllers/productController');
 const orders = require('../controllers/orderController');
 const users = require('../controllers/userController');
 const payments = require('../controllers/paymentController');
+const notifications = require('../controllers/notificationController');
+const wishlist = require('../controllers/wishlistController');
 const { protect, optionalAuth } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
 
@@ -84,5 +86,22 @@ router.put('/user-status-update/:id', ...admin, users.updateUserStatus);
 // ---- ბარათით გადახდა (ბანკის callback და სატესტო გვერდი რჩება /api/payments/... — ეს მისამართები ბანკებთანაა რეგისტრირებული)
 router.post('/payment-init/:orderId', protect, payments.initPayment);
 router.get('/payment-status/:orderId', protect, payments.getPaymentStatus);
+
+// ---- რჩეულები (Wishlist) — მხოლოდ საკუთარი სია
+router.get('/wishlist-list', protect, wishlist.getWishlist);
+router.get('/wishlist-ids', protect, wishlist.getWishlistIds);
+router.get('/wishlist-count', protect, wishlist.getWishlistCount);
+router.post('/wishlist-add/:productId', protect, wishlist.addToWishlist);
+router.delete('/wishlist-remove/:productId', protect, wishlist.removeFromWishlist);
+
+// ---- შეტყობინებები (Notification Center) — მომხმარებლისთვის მხოლოდ საკუთარი
+router.get('/notification-list', protect, notifications.getMyNotifications);
+router.get('/notification-unread-count', protect, notifications.getUnreadCount);
+router.put('/notification-read-all', protect, notifications.markAllNotificationsRead);
+router.put('/notification-read/:id', protect, notifications.markNotificationRead);
+// კამპანიები / ხელით გაგზავნა — ადმინი და მენეჯერი
+router.get('/notification-campaign-list', ...staff, notifications.listCampaigns);
+router.post('/notification-campaign-create', ...staff, notifications.createCampaign);
+router.get('/notification-recipient-search', ...staff, notifications.searchRecipients);
 
 module.exports = router;
