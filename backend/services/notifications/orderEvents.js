@@ -1,6 +1,7 @@
 const emailService = require('../email/emailService');
 const { isConfirmedOrder } = require('../../constants/orderStatus');
-const { notifyInBackground } = require('./index');
+const { notify, notifyInBackground } = require('./index');
+const { unreviewedProducts } = require('../reviews');
 
 /*
  * შეკვეთის მოვლენები → შეტყობინებები. გამოიძახება მხოლოდ უკვე წარმატებული ცვლილების შემდეგ
@@ -53,6 +54,30 @@ const orderStatusChanged = (order, status) => {
       email: (user) => emailService.sendOrderStatusEmail({ to: user.email, order: plain, status, orderUrl: ORDER_URL(order) }),
     },
   });
+  if (status === 'completed') reviewReminder(order);
 };
 
-module.exports = { orderReceived, orderStatusChanged };
+/**
+ * შეფასების შეხსენება დასრულებულ შეკვეთაზე — ცალკე, მხოლოდ in-app (completed-ის შეტყობინება უცვლელია).
+ * მაქსიმუმ ერთი შეკვეთაზე (dedupeKey); არ იქმნება, თუ შეკვეთის ყველა ხელმისაწვდომი პროდუქტი უკვე შეფასებულია.
+ */
+const reviewReminder = (order) => {
+  if (!order?.user || !isConfirmedOrder(order)) return;
+  const productIds = (order.items || []).map((i) => i.product).filter(Boolean);
+  (async () => {
+    const pending = await unreviewedProducts(order.user, productIds);
+    if (!pending.length) return;
+    await notify({
+      userIds: [order.user],
+      channels: ['in_app'],
+      notification: {
+        ...base(order),
+        template: 'review_reminder',
+        params: { orderNumber: order.orderNumber, count: pending.length },
+        dedupeKey: `order:${order._id}:review_reminder`,
+      },
+    });
+  })().catch((err) => console.error(`[notify] review reminder: ${err.message}`));
+};
+
+module.exports = { orderReceived, orderStatusChanged, reviewReminder };

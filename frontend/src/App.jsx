@@ -17,6 +17,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Profile from './pages/Profile';
 import Notifications from './pages/Notifications';
 import AdminNotifications from './pages/admin/AdminNotifications';
+import AdminReviews from './pages/admin/AdminReviews';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -109,6 +110,7 @@ function App() {
             <Route path="orders" element={<AdminOrders />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="notifications" element={<AdminNotifications />} />
+            <Route path="reviews" element={<AdminReviews />} />
           </Route>
 
           <Route path="*" element={<NotFound />} />

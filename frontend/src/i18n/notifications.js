@@ -14,6 +14,12 @@ export const notificationText = (n, t = i18n.t.bind(i18n), lng = i18n.language) 
         : t(`notifications.templates.order_status.${n.params?.status}`, { defaultValue: t('notifications.types.order') });
     return { title, message: t('notifications.templates.orderMessage', { orderNumber: n.params?.orderNumber || '' }) };
   }
+  if (n.template === 'review_reminder') {
+    return {
+      title: t('notifications.templates.review_reminder.title'),
+      message: t('notifications.templates.review_reminder.message', { orderNumber: n.params?.orderNumber || '', count: n.params?.count || 1 }),
+    };
+  }
   return { title: localizedField(n, 'title', lng) || '', message: localizedField(n, 'message', lng) || '' };
 };
 

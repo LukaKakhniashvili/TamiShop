@@ -16,9 +16,9 @@ const DRY_RUN = process.argv.includes('--dry-run');
 const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 // Product სქემაში არ არის ცალკე ველები ბრენდის, SKU-ს, ქვეკატეგორიის, ვარიანტების,
-// მარაგის, რეიტინგისა და ტეგებისთვის, ამიტომ ისინი ინახება specifications-სა და description-ში.
+// მარაგისა და ტეგებისთვის, ამიტომ ისინი ინახება specifications-სა და description-ში.
+// რეიტინგი (catalogData-ს rating) არ იწერება: Product.rating / reviewCount მხოლოდ რეალური შეფასებებიდან ითვლება.
 const buildProduct = (p, categoryId) => {
-  const [rating, reviews] = p.rating;
   const specifications = [
     ['ბრენდი', p.brand],
     ['ქვეკატეგორია', p.subcategory],
@@ -26,7 +26,6 @@ const buildProduct = (p, categoryId) => {
     ...(p.variants || []),
     ['არტიკული (SKU)', p.sku],
     ['მარაგი', p.stock > 0 ? `${p.stock} ცალი` : 'ამოწურულია'],
-    ['რეიტინგი', `${rating.toFixed(1)} / 5 (${reviews} შეფასება)`],
   ].map(([key, value]) => ({ key, value: String(value) }));
 
   const description = [
@@ -48,8 +47,8 @@ const buildProduct = (p, categoryId) => {
     category: categoryId,
     inStock: p.stock > 0,
     isActive: true,
-    rating,
-    reviewCount: reviews,
+    rating: 0,
+    reviewCount: 0,
   };
 };
 

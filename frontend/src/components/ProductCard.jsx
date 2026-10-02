@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import { useLocalized } from '../i18n/content';
 import Icon from './Icon';
 import WishlistButton from './WishlistButton';
+import { RatingBadge } from './reviews/Stars';
 import { Price, formatPrice, productDiscount } from './ui';
 
 const PLACEHOLDER = 'https://placehold.co/400x400?text=No+Image';
@@ -93,6 +94,8 @@ const ProductCard = ({ product, index = 0, highlight = false, rank }) => {
         <Link to={href} className="pc-name">
           {name}
         </Link>
+        {/* რეიტინგი პროდუქტის აგრეგატიდან (ცალკე მოთხოვნა არ არის); შეფასებების გარეშე — არაფერი */}
+        <RatingBadge rating={product.rating} count={product.reviewCount} />
         {highlight && discount > 0 && (
           <span className="pc-save">{t('product.save', { amount: formatPrice(product.oldPrice - product.price) })}</span>
         )}

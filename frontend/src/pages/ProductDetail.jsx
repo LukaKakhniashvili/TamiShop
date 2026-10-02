@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { useCart } from '../context/CartContext';
@@ -6,6 +6,8 @@ import { trackProductView } from '../utils/activity';
 import Icon from '../components/Icon';
 import VariantSelector from '../components/VariantSelector';
 import WishlistButton from '../components/WishlistButton';
+import ProductReviews from '../components/reviews/ProductReviews';
+import { Stars } from '../components/reviews/Stars';
 import { useTranslation } from 'react-i18next';
 import { localizedSpecs, useLocalized } from '../i18n/content';
 import useDocumentMeta from '../hooks/useDocumentMeta';
@@ -52,6 +54,9 @@ const ProductDetail = () => {
   const [zoomOrigin, setZoomOrigin] = useState('50% 50%');
   const [selection, setSelection] = useState({}); // { optionId: valueId }
   const [missingOptionId, setMissingOptionId] = useState(null);
+  // რეიტინგი სათაურთან: პროდუქტის აგრეგატიდან; შეფასების შეცვლისას — განახლებული შეჯამებიდან
+  const [ratingInfo, setRatingInfo] = useState(null);
+  const onReviewSummary = useCallback((info) => setRatingInfo(info), []);
   const { addToCart } = useCart();
   const { t, i18n } = useTranslation();
   const L = useLocalized();
@@ -63,6 +68,7 @@ const ProductDetail = () => {
     setCurrentIndex(0);
     setQuantity(1);
     setMissingOptionId(null);
+    setRatingInfo(null);
     api
       .get(`/product-details/${id}`)
       .then(({ data }) => {
@@ -116,6 +122,7 @@ const ProductDetail = () => {
   const description = L(product, 'description');
   const categoryName = product.category ? L(product.category, 'name') : '';
   const specs = localizedSpecs(product, i18n.language);
+  const rating = ratingInfo || { rating: product.rating || 0, reviewCount: product.reviewCount || 0 };
 
   // ---- ვარიანტები: არჩევანი → ზუსტი ვარიანტი → ფასი / ფასდაკლება / მარაგი
   const configurable = hasVariants(product);
@@ -273,6 +280,25 @@ const ProductDetail = () => {
 
           <h1>{name}</h1>
 
+          <a
+            href="#reviews"
+            className="pd-rating"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          >
+            {rating.reviewCount > 0 ? (
+              <>
+                <Stars value={rating.rating} size={16} />
+                <strong>{Number(rating.rating).toFixed(1)}</strong>
+                <span className="muted">{t('reviews.totalReviews', { count: rating.reviewCount })}</span>
+              </>
+            ) : (
+              <span className="muted">{t('reviews.noReviews')}</span>
+            )}
+          </a>
+
           <div className="pd-price" aria-live="polite">
             {configurable && !variant && range.max > range.min ? (
               // სრულ არჩევამდე — ფასების დიაპაზონი
@@ -341,6 +367,8 @@ const ProductDetail = () => {
           <div className="rich-text" dangerouslySetInnerHTML={{ __html: description }} />
         </section>
       )}
+
+      <ProductReviews productId={product._id} productName={name} onSummaryChange={onReviewSummary} />
     </div>
   );
 };

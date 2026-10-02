@@ -552,7 +552,13 @@
       "ORDER_NOT_FOUND": "შეკვეთა ვერ მოიძებნა",
       "NOT_CANCELLABLE": "ეს შეკვეთა უკვე დადასტურებულია და აქედან ვერ გაუქმდება",
       "WISHLIST_FULL": "რჩეულებში მაქსიმუმ {{max}} პროდუქტია",
-      "INVALID_PRODUCT": "არასწორი პროდუქტი"
+      "INVALID_PRODUCT": "არასწორი პროდუქტი",
+      "INVALID_RATING": "შეფასება უნდა იყოს 1-დან 5 ვარსკვლავამდე",
+      "COMMENT_TOO_SHORT": "კომენტარი მინიმუმ {{min}} სიმბოლო უნდა იყოს",
+      "COMMENT_TOO_LONG": "კომენტარი მაქსიმუმ {{max}} სიმბოლოა",
+      "NOT_PURCHASED": "შეფასება შესაძლებელია მხოლოდ იმ პროდუქტზე, რომლის შეკვეთაც დასრულებულია",
+      "ALREADY_REVIEWED": "ეს პროდუქტი უკვე შეაფასეთ — შეგიძლიათ შეფასება შეცვალოთ",
+      "REVIEW_NOT_FOUND": "შეფასება ვერ მოიძებნა (შესაძლოა, უკვე წაიშალა)"
     }
   },
   "accessGate": {
@@ -600,7 +606,12 @@
         "completed": "შეკვეთა დასრულებულია",
         "cancelled": "შეკვეთა გაუქმებულია"
       },
-      "orderMessage": "შეკვეთა {{orderNumber}}"
+      "orderMessage": "შეკვეთა {{orderNumber}}",
+      "review_reminder": {
+        "title": "როგორ მოგეწონათ შენაძენი?",
+        "message_one": "შეაფასეთ შეკვეთის {{orderNumber}} პროდუქტი.",
+        "message_other": "შეაფასეთ შეკვეთის {{orderNumber}} პროდუქტები ({{count}})."
+      }
     }
   },
   "wishlist": {
@@ -621,5 +632,71 @@
     "count_other": "{{count}} პროდუქტი",
     "headerLabel_one": "რჩეულები ({{count}})",
     "headerLabel_other": "რჩეულები ({{count}})"
+  },
+  "reviews": {
+    "title": "შეფასებები",
+    "writeReview": "შეფასების დაწერა",
+    "editReview": "შეფასების რედაქტირება",
+    "deleteReview": "შეფასების წაშლა",
+    "viewEditReview": "შეფასების ნახვა / შეცვლა",
+    "rating": "შეფასება",
+    "comment": "კომენტარი",
+    "commentPlaceholder": "გაგვიზიარეთ შთაბეჭდილება: ხარისხი, მოხერხებულობა, შეესაბამებოდა თუ არა აღწერას...",
+    "commentHint": "მინიმუმ {{min}} სიმბოლო",
+    "submit": "შეფასების გაგზავნა",
+    "update": "ცვლილებების შენახვა",
+    "saving": "ინახება...",
+    "verifiedPurchase": "დადასტურებული შენაძენი",
+    "noReviews": "შეფასებები ჯერ არ არის",
+    "noReviewsText": "ამ პროდუქტს ჯერ არავინ შეუფასებია.",
+    "beFirst": "იყავით პირველი, ვინც ამ პროდუქტს შეაფასებს.",
+    "totalReviews_one": "{{count}} შეფასება",
+    "totalReviews_other": "{{count}} შეფასება",
+    "ratingSummary_one": "საშუალო შეფასება {{rating}} / 5 ({{count}} შეფასება)",
+    "ratingSummary_other": "საშუალო შეფასება {{rating}} / 5 ({{count}} შეფასება)",
+    "ratingOutOf": "შეფასება: {{rating}} / 5",
+    "starLabel_one": "{{count}} ვარსკვლავი",
+    "starLabel_other": "{{count}} ვარსკვლავი",
+    "ratingWords": {
+      "1": "ძალიან ცუდი",
+      "2": "ცუდი",
+      "3": "საშუალო",
+      "4": "კარგი",
+      "5": "შესანიშნავი"
+    },
+    "chooseRating": "აირჩიეთ შეფასება",
+    "ratingRequired": "აირჩიეთ შეფასება (1–5 ვარსკვლავი)",
+    "commentTooShort": "კომენტარი მინიმუმ {{min}} სიმბოლო უნდა იყოს",
+    "commentTooLong": "კომენტარი მაქსიმუმ {{max}} სიმბოლოა",
+    "publicNote": "შეფასება საჯაროდ გამოჩნდება თქვენი სახელით და გვარის პირველი ასოთი.",
+    "reviewSubmitted": "შეფასება გამოქვეყნდა. მადლობა!",
+    "reviewUpdated": "შეფასება განახლდა",
+    "reviewDeleted": "შეფასება წაიშალა",
+    "submitFailed": "შეფასების გაგზავნა ვერ მოხერხდა",
+    "updateFailed": "შეფასების განახლება ვერ მოხერხდა",
+    "deleteFailed": "შეფასების წაშლა ვერ მოხერხდა",
+    "deleteConfirmTitle": "წავშალოთ შეფასება?",
+    "deleteConfirmText": "შეფასება სამუდამოდ წაიშლება. შემდეგ შეგიძლიათ ახალი დაწეროთ.",
+    "distribution": "შეფასებების განაწილება",
+    "barLabel": "{{star}} ვარსკვლავი: {{count}} შეფასება ({{percent}}%)",
+    "yourReview": "თქვენი შეფასება",
+    "anonymous": "მყიდველი",
+    "edited": "რედაქტირებულია",
+    "loadFailed": "შეფასებების ჩატვირთვა ვერ მოხერხდა",
+    "loginToReview": "შედით, რომ შეაფასოთ",
+    "hiddenNote": "თქვენი შეფასება მოდერატორმა დამალა და საჯაროდ არ ჩანს. შეგიძლიათ შეცვალოთ ან წაშალოთ.",
+    "hiddenShort": "დამალულია",
+    "alreadyReviewed": "თქვენ უკვე შეაფასეთ ეს პროდუქტი.",
+    "notEligible": "შეფასების დაწერა შეუძლიათ მყიდველებს, რომელთა შეკვეთაც ამ პროდუქტით დასრულებულია.",
+    "filteredBy_one": "{{star}}★ შეფასებები: {{count}}",
+    "filteredBy_other": "{{star}}★ შეფასებები: {{count}}",
+    "clearFilter": "ყველას ჩვენება",
+    "sortLabel": "შეფასებების სორტირება",
+    "newest": "ჯერ უახლესი",
+    "highest": "ჯერ მაღალი შეფასება",
+    "lowest": "ჯერ დაბალი შეფასება",
+    "loading": "იტვირთება...",
+    "loadMore_one": "მეტის ნახვა ({{count}})",
+    "loadMore_other": "მეტის ნახვა ({{count}})"
   }
 }

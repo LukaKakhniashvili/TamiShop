@@ -106,4 +106,7 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// „ჩემი შეკვეთები" + შეფასების უფლების შემოწმება (user + completed)
+orderSchema.index({ user: 1, status: 1 });
+
 module.exports = mongoose.model('Order', orderSchema);

@@ -9,7 +9,8 @@
     "dev": "nodemon server.js",
     "seed": "node utils/seed.js",
     "seed:catalog": "node utils/seedCatalog.js",
-    "migrate:translations": "node utils/migrateTranslations.js"
+    "migrate:translations": "node utils/migrateTranslations.js",
+    "migrate:review-aggregates": "node utils/migrateReviewAggregates.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

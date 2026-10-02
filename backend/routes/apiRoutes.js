@@ -18,6 +18,7 @@ const users = require('../controllers/userController');
 const payments = require('../controllers/paymentController');
 const notifications = require('../controllers/notificationController');
 const wishlist = require('../controllers/wishlistController');
+const reviews = require('../controllers/reviewController');
 const { protect, optionalAuth } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
 
@@ -93,6 +94,18 @@ router.get('/wishlist-ids', protect, wishlist.getWishlistIds);
 router.get('/wishlist-count', protect, wishlist.getWishlistCount);
 router.post('/wishlist-add/:productId', protect, wishlist.addToWishlist);
 router.delete('/wishlist-remove/:productId', protect, wishlist.removeFromWishlist);
+
+// ---- შეფასებები (Reviews) — საჯარო სია/შეჯამება; მომხმარებელი — მხოლოდ საკუთარი; მოდერაცია — staff
+router.get('/review-list/:productId', reviews.getProductReviews);
+router.get('/review-summary/:productId', reviews.getReviewSummary);
+router.get('/review-eligibility/:productId', protect, reviews.getEligibility);
+router.get('/review-my-status', protect, reviews.getMyStatus);
+router.post('/review-create/:productId', protect, reviews.createReview);
+router.put('/review-update/:id', protect, reviews.updateReview);
+router.delete('/review-delete/:id', protect, reviews.deleteReview);
+router.get('/review-admin-list', ...staff, reviews.adminListReviews);
+router.put('/review-hide/:id', ...staff, reviews.hideReview);
+router.put('/review-restore/:id', ...staff, reviews.restoreReview);
 
 // ---- შეტყობინებები (Notification Center) — მომხმარებლისთვის მხოლოდ საკუთარი
 router.get('/notification-list', protect, notifications.getMyNotifications);

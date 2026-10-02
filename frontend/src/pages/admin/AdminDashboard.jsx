@@ -9,6 +9,7 @@ const links = [
   { to: '/admin/orders', label: 'შეკვეთები', icon: 'receipt' },
   { to: '/admin/users', label: 'მომხმარებლები', icon: 'users' },
   { to: '/admin/notifications', label: 'შეტყობინებები', icon: 'bell' },
+  { to: '/admin/reviews', label: 'შეფასებები', icon: 'star' },
 ];
 
 const AdminDashboard = () => {

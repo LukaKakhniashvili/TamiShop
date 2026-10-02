@@ -31,7 +31,7 @@ const NotificationItem = ({ notification: n, compact = false, onNavigate, onRead
   return (
     <button type="button" className={`notif-item ${n.read ? 'is-read' : 'is-unread'} ${compact ? 'compact' : ''}`} onClick={open}>
       <span className={`notif-icon type-${n.type}`} aria-hidden="true">
-        <Icon name={TYPE_ICON[n.type] || 'info'} size={compact ? 16 : 18} />
+        <Icon name={n.template === 'review_reminder' ? 'star' : TYPE_ICON[n.type] || 'info'} size={compact ? 16 : 18} />
       </span>
       <span className="notif-body">
         <span className="notif-title">

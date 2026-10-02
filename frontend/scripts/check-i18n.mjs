@@ -18,6 +18,8 @@ const DYNAMIC = {
   'profile.tracking.*': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
   'notifications.types.*': ['order', 'marketing', 'promotion', 'system'],
   'notifications.templates.order_status.*': ['processing', 'shipped', 'completed', 'cancelled'],
+  'reviews.*': ['newest', 'highest', 'lowest'],
+  'reviews.ratingWords.*': ['1', '2', '3', '4', '5'],
   'orderStatus.*': ['pending', 'processing', 'shipped', 'completed', 'cancelled'],
   'paymentStatus.*': ['pending', 'paid', 'pay_on_delivery', 'failed', 'cancelled', 'refunded'],
   'paymentMethodShort.*': ['card', 'cod'],
@@ -43,7 +45,8 @@ const DYNAMIC = {
     'CURRENT_PASSWORD_INCORRECT', 'PASSWORD_MISMATCH', 'SAME_PASSWORD', 'INVALID_EMAIL', 'EMAIL_NOT_FOUND', 'EMAIL_EXISTS',
     'ACCOUNT_DISABLED', 'ACCOUNT_UNAVAILABLE', 'RESET_TOKEN_INVALID', 'GOOGLE_FAILED', 'REQUIRED_FIELDS', 'INVALID_CREDENTIALS',
     'UNAUTHORIZED', 'PRODUCT_UNAVAILABLE', 'VARIANT_REQUIRED', 'VARIANT_NOT_FOUND', 'VARIANT_INACTIVE', 'OUT_OF_STOCK',
-    'ORDER_NOT_FOUND', 'NOT_CANCELLABLE', 'WISHLIST_FULL', 'INVALID_PRODUCT',
+    'ORDER_NOT_FOUND', 'NOT_CANCELLABLE', 'WISHLIST_FULL', 'INVALID_PRODUCT', 'INVALID_RATING', 'COMMENT_TOO_SHORT',
+    'COMMENT_TOO_LONG', 'NOT_PURCHASED', 'ALREADY_REVIEWED', 'REVIEW_NOT_FOUND',
   ],
 };
 
@@ -58,7 +61,7 @@ for (const file of sources) {
   for (const m of src.matchAll(/\bt\(\s*['"]([A-Za-z0-9_.]+)['"]/g)) used.set(m[1], rel);
   for (const m of src.matchAll(/i18nKey="([A-Za-z0-9_.]+)"/g)) used.set(m[1], rel);
   // გასაღები, რომელიც მოგვიანებით გადაეცემა t()-ს (მაგ. ვალიდაციის შეცდომები)
-  for (const m of src.matchAll(/'((?:checkout|errors|otp|password|auth|common)\.[A-Za-z0-9_.]+)'/g)) used.set(m[1], rel);
+  for (const m of src.matchAll(/'((?:checkout|errors|otp|password|auth|common|reviews)\.[A-Za-z0-9_.]+)'/g)) used.set(m[1], rel);
   for (const m of src.matchAll(/\bt\(\s*`([^`]+)`/g)) dynamicUsed.set(m[1].replace(/\$\{[^}]+\}/g, '*'), rel);
 }
 

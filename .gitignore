@@ -7,6 +7,9 @@ node_modules/
 # example files contain placeholders only — keep them in git
 !.env.example
 
+# DB migration backups (may contain catalog data)
+backend/backups/
+
 # Build output
 dist/
 build/

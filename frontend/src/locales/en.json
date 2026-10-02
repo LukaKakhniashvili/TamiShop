@@ -552,7 +552,13 @@
       "ORDER_NOT_FOUND": "Order not found",
       "NOT_CANCELLABLE": "This order has already been confirmed and can't be cancelled here",
       "WISHLIST_FULL": "Your Wishlist can hold up to {{max}} products",
-      "INVALID_PRODUCT": "Invalid product"
+      "INVALID_PRODUCT": "Invalid product",
+      "INVALID_RATING": "Rating must be between 1 and 5 stars",
+      "COMMENT_TOO_SHORT": "Your review must be at least {{min}} characters",
+      "COMMENT_TOO_LONG": "Your review can be at most {{max}} characters",
+      "NOT_PURCHASED": "You can only review products from a completed order",
+      "ALREADY_REVIEWED": "You've already reviewed this product — you can edit your review instead",
+      "REVIEW_NOT_FOUND": "Review not found (it may have been deleted)"
     }
   },
   "accessGate": {
@@ -600,7 +606,12 @@
         "completed": "Your order has been completed",
         "cancelled": "Your order has been cancelled"
       },
-      "orderMessage": "Order {{orderNumber}}"
+      "orderMessage": "Order {{orderNumber}}",
+      "review_reminder": {
+        "title": "How was your purchase?",
+        "message_one": "Rate the product from order {{orderNumber}}.",
+        "message_other": "Rate the {{count}} products from order {{orderNumber}}."
+      }
     }
   },
   "wishlist": {
@@ -621,5 +632,71 @@
     "count_other": "{{count}} products",
     "headerLabel_one": "Wishlist ({{count}} item)",
     "headerLabel_other": "Wishlist ({{count}} items)"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "writeReview": "Write a review",
+    "editReview": "Edit review",
+    "deleteReview": "Delete review",
+    "viewEditReview": "View/edit your review",
+    "rating": "Rating",
+    "comment": "Review",
+    "commentPlaceholder": "Share your experience: quality, ease of use, how well it matched the description…",
+    "commentHint": "At least {{min}} characters",
+    "submit": "Submit review",
+    "update": "Save changes",
+    "saving": "Saving…",
+    "verifiedPurchase": "Verified purchase",
+    "noReviews": "No reviews yet",
+    "noReviewsText": "Nobody has reviewed this product yet.",
+    "beFirst": "Be the first to review this product.",
+    "totalReviews_one": "{{count}} review",
+    "totalReviews_other": "{{count}} reviews",
+    "ratingSummary_one": "Rated {{rating}} out of 5 ({{count}} review)",
+    "ratingSummary_other": "Rated {{rating}} out of 5 ({{count}} reviews)",
+    "ratingOutOf": "Rated {{rating}} out of 5",
+    "starLabel_one": "{{count}} star",
+    "starLabel_other": "{{count}} stars",
+    "ratingWords": {
+      "1": "Terrible",
+      "2": "Poor",
+      "3": "Average",
+      "4": "Good",
+      "5": "Excellent"
+    },
+    "chooseRating": "Select a rating",
+    "ratingRequired": "Please select a rating (1–5 stars)",
+    "commentTooShort": "Your review must be at least {{min}} characters",
+    "commentTooLong": "Your review can be at most {{max}} characters",
+    "publicNote": "Your review will be public, shown with your first name and last initial.",
+    "reviewSubmitted": "Review published. Thank you!",
+    "reviewUpdated": "Review updated",
+    "reviewDeleted": "Review deleted",
+    "submitFailed": "Couldn't submit your review",
+    "updateFailed": "Couldn't update your review",
+    "deleteFailed": "Couldn't delete your review",
+    "deleteConfirmTitle": "Delete your review?",
+    "deleteConfirmText": "Your review will be permanently deleted. You can write a new one afterwards.",
+    "distribution": "Rating distribution",
+    "barLabel": "{{star}}-star reviews: {{count}} ({{percent}}%)",
+    "yourReview": "Your review",
+    "anonymous": "Customer",
+    "edited": "edited",
+    "loadFailed": "Couldn't load reviews",
+    "loginToReview": "Log in to write a review",
+    "hiddenNote": "Your review was hidden by a moderator and isn't publicly visible. You can edit or delete it.",
+    "hiddenShort": "Hidden",
+    "alreadyReviewed": "You've already reviewed this product.",
+    "notEligible": "Reviews can be written by customers whose order with this product has been completed.",
+    "filteredBy_one": "{{star}}★ reviews: {{count}}",
+    "filteredBy_other": "{{star}}★ reviews: {{count}}",
+    "clearFilter": "Show all",
+    "sortLabel": "Sort reviews",
+    "newest": "Newest",
+    "highest": "Highest rating",
+    "lowest": "Lowest rating",
+    "loading": "Loading…",
+    "loadMore_one": "Show more ({{count}})",
+    "loadMore_other": "Show more ({{count}})"
   }
 }

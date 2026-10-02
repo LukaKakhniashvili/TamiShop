@@ -14,6 +14,7 @@ const { normalizeTranslations, PRODUCT_TRANSLATION_FIELDS } = require('../utils/
 const { buildProductSearchFilter, localizedNameExpr, collationFor } = require('../utils/productSearch');
 const { requestLanguage } = require('../utils/requestLanguage');
 const Category = require('../models/Category');
+const { deleteForProduct: deleteProductReviews } = require('../services/reviews');
 
 const slugify = (str) => {
   const slug = str
@@ -246,6 +247,8 @@ const deleteProduct = asyncHandler(async (req, res) => {
     throw new Error('პროდუქტი ვერ მოიძებნა');
   }
   await product.deleteOne();
+  // შეფასებებიც (ობოლი ჩანაწერები არ რჩება)
+  await deleteProductReviews(product._id);
   res.json({ message: 'პროდუქტი წაიშალა' });
 });
 

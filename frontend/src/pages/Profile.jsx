@@ -9,6 +9,8 @@ import CitySelect, { cityLabel } from '../components/checkout/CitySelect';
 import ChangePasswordCard from '../components/ChangePasswordCard';
 import LineOptions from '../components/LineOptions';
 import ProductCard from '../components/ProductCard';
+import ReviewForm from '../components/reviews/ReviewForm';
+import { Stars } from '../components/reviews/Stars';
 import { useWishlist } from '../context/WishlistContext';
 import { EmptyState, Field, Tabs, formatPrice, getInitials } from '../components/ui';
 import { paymentStatusPill, statusPill } from '../constants';
@@ -73,6 +75,9 @@ const MyOrders = ({ cities }) => {
   const [params] = useSearchParams();
   const focusId = params.get('order');
   const [highlightId, setHighlightId] = useState(null);
+  // შეფასებები დასრულებული შეკვეთების პროდუქტებზე: { [productId]: ჩემი შეფასება | null } — ერთი მოთხოვნით
+  const [reviewMap, setReviewMap] = useState({});
+  const [reviewing, setReviewing] = useState(null); // { productId, name, review }
 
   useEffect(() => {
     api
@@ -80,6 +85,15 @@ const MyOrders = ({ cities }) => {
       .then(({ data }) => setOrders(data))
       .catch(() => setOrders([]));
   }, []);
+
+  useEffect(() => {
+    const ids = [...new Set((orders || []).filter((o) => o.status === 'completed').flatMap((o) => o.items.map((it) => String(it.product))))];
+    if (!ids.length) return;
+    api
+      .get('/review-my-status', { params: { productIds: ids.slice(0, 100).join(',') } })
+      .then(({ data }) => setReviewMap(data.reviews || {}))
+      .catch(() => setReviewMap({}));
+  }, [orders]);
 
   useEffect(() => {
     if (!orders || !focusId || !orders.some((o) => o._id === focusId)) return undefined;
@@ -172,15 +186,34 @@ const MyOrders = ({ cities }) => {
                     {o.delivery?.estimate && <span className="muted"> · {t('checkout.deliveryEstimate', { min: 2, max: 6 })}</span>}
                   </div>
                   <div className="order-lines">
-                    {o.items.map((it, idx) => (
-                      <div key={idx}>
-                        <span>
-                          {L(it, 'name')} <span className="muted">× {it.quantity}</span>
-                          <LineOptions options={it.variant?.options} />
-                        </span>
-                        <span>{formatPrice(it.price * it.quantity)}</span>
-                      </div>
-                    ))}
+                    {o.items.map((it, idx) => {
+                      const pid = String(it.product);
+                      // მხოლოდ დასრულებულ შეკვეთაში და თუ პროდუქტი ჯერ კიდევ ხელმისაწვდომია (სერვერის პასუხში არის)
+                      const canRate = o.status === 'completed' && pid in reviewMap;
+                      const mine = reviewMap[pid];
+                      return (
+                        <div key={idx}>
+                          <span>
+                            {L(it, 'name')} <span className="muted">× {it.quantity}</span>
+                            <LineOptions options={it.variant?.options} />
+                            {canRate && (
+                              <span className="order-line-review">
+                                {mine && <Stars value={mine.rating} size={13} />}
+                                {mine?.status === 'hidden' && <span className="pill pill-warning no-dot">{t('reviews.hiddenShort')}</span>}
+                                <button
+                                  type="button"
+                                  className="link"
+                                  onClick={() => setReviewing({ productId: pid, name: L(it, 'name'), review: mine })}
+                                >
+                                  {mine ? t('reviews.viewEditReview') : t('reviews.writeReview')}
+                                </button>
+                              </span>
+                            )}
+                          </span>
+                          <span>{formatPrice(it.price * it.quantity)}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="order-total">
                     <span>{t('cart.total')}</span>
@@ -192,6 +225,18 @@ const MyOrders = ({ cities }) => {
           </div>
         );
       })}
+      {reviewing && (
+        <ReviewForm
+          productId={reviewing.productId}
+          productName={reviewing.name}
+          review={reviewing.review}
+          onClose={() => setReviewing(null)}
+          onSaved={(review) => {
+            setReviewMap((m) => ({ ...m, [reviewing.productId]: review }));
+            setReviewing(null);
+          }}
+        />
+      )}
     </div>
   );
 };
