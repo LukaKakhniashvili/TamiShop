@@ -19,6 +19,7 @@ const payments = require('../controllers/paymentController');
 const notifications = require('../controllers/notificationController');
 const wishlist = require('../controllers/wishlistController');
 const reviews = require('../controllers/reviewController');
+const analytics = require('../controllers/analyticsController');
 const { protect, optionalAuth } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
 
@@ -106,6 +107,14 @@ router.delete('/review-delete/:id', protect, reviews.deleteReview);
 router.get('/review-admin-list', ...staff, reviews.adminListReviews);
 router.put('/review-hide/:id', ...staff, reviews.hideReview);
 router.put('/review-restore/:id', ...staff, reviews.restoreReview);
+
+// ---- ბიზნეს-ანალიტიკა — მხოლოდ ადმინი / მენეჯერი (?range=today|7d|30d|3m|1y|custom&from&to)
+router.get('/analytics-summary', ...staff, analytics.getSummary);
+router.get('/analytics-sales', ...staff, analytics.getSales);
+router.get('/analytics-products', ...staff, analytics.getProducts);
+router.get('/analytics-customers', ...staff, analytics.getCustomers);
+router.get('/analytics-wishlist', ...staff, analytics.getWishlist);
+router.get('/analytics-reviews', ...staff, analytics.getReviews);
 
 // ---- შეტყობინებები (Notification Center) — მომხმარებლისთვის მხოლოდ საკუთარი
 router.get('/notification-list', protect, notifications.getMyNotifications);

@@ -1,4 +1,5 @@
 const Order = require('../models/Order');
+const { CONFIRMED_ORDER_MATCH } = require('../constants/orderStatus');
 
 /*
  * პროდუქტის სტატუსების ერთიანი ბიზნეს-წესები. ფასების სტრუქტურა:
@@ -59,13 +60,14 @@ const withComputedFields = (p, now = Date.now()) => ({
 });
 
 /**
- * გაყიდული ერთეულები თითო პროდუქტზე (გაუქმებული შეკვეთების გარეშე).
+ * გაყიდული ერთეულები თითო პროდუქტზე: მხოლოდ დადასტურებული შეკვეთები (ბარათით გადაუხდელი მცდელობა
+ * არ ითვლება — CONFIRMED_ORDER_MATCH), გაუქმებულების გარეშე.
  * @param {object} [match] დამატებითი ფილტრი შეკვეთებზე (მაგ. { user: id } ან თარიღის დიაპაზონი)
  * @returns {Promise<Map<string, number>>} productId -> გაყიდული რაოდენობა, კლებადობით
  */
 const getSalesCounts = async (match = {}) => {
   const rows = await Order.aggregate([
-    { $match: { status: { $ne: 'cancelled' }, ...match } },
+    { $match: { $and: [{ status: { $ne: 'cancelled' } }, CONFIRMED_ORDER_MATCH, match] } },
     { $unwind: '$items' },
     { $group: { _id: '$items.product', units: { $sum: '$items.quantity' } } },
     { $sort: { units: -1 } },

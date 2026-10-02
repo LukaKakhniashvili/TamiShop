@@ -35,8 +35,9 @@ const popularityParts = (p, sales, maxSales, maxReviewsLog) => ({
 });
 
 /**
- * ბესტსელერები: ჯერ რეალური გაყიდვები შეკვეთებიდან, შემდეგ (თუ გაყიდვები ცოტაა)
- * ივსება პოპულარობით — შეფასებების რაოდენობა და რეიტინგი.
+ * ბესტსელერები: მხოლოდ რეალური გაყიდვები (დადასტურებული, გაუქმების გარეშე — getSalesCounts).
+ * გაყიდვები ცოტაა → ნაკლები პროდუქტი ბრუნდება; შეფასებებით/რეიტინგით „შევსება" აღარ ხდება
+ * (ცარიელ სიას მთავარი გვერდის სექცია თავად მალავს).
  */
 const getBestSellers = async (limit = 10) => {
   const sales = await getSalesCounts();
@@ -45,19 +46,9 @@ const getBestSellers = async (limit = 10) => {
   const sold = await Product.find({ _id: { $in: soldIds }, isActive: true })
     .populate('category', CATEGORY_FIELDS)
     .lean();
-  sold.sort((a, b) => sales.get(String(b._id)) - sales.get(String(a._id)) || (b.reviewCount || 0) - (a.reviewCount || 0));
+  sold.sort((a, b) => sales.get(String(b._id)) - sales.get(String(a._id)) || new Date(b.createdAt) - new Date(a.createdAt));
 
-  let result = sold.slice(0, limit);
-  if (result.length < limit) {
-    const fill = await Product.find({ isActive: true, inStock: true, _id: { $nin: soldIds } })
-      .sort({ reviewCount: -1, rating: -1, createdAt: -1 })
-      .limit(limit - result.length)
-      .populate('category', CATEGORY_FIELDS)
-      .lean();
-    result = result.concat(fill);
-  }
-
-  return result.map((p) => ({ ...withComputedFields(p), soldCount: sales.get(String(p._id)) || 0 }));
+  return sold.slice(0, limit).map((p) => ({ ...withComputedFields(p), soldCount: sales.get(String(p._id)) || 0 }));
 };
 
 /**

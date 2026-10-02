@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const asyncHandler = require('express-async-handler');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const { nameTranslations } = require('../utils/translations');
 const { requestLanguage } = require('../utils/requestLanguage');
 const {
@@ -98,6 +99,14 @@ const createOrder = asyncHandler(async (req, res) => {
   // ფასების გადამოწმება ბაზიდან (არასდროს ვენდობით frontend-ის ფასს — მოთხოვნაში ფასი არც კი მიიღება)
   const productIds = items.map((i) => i.productId).filter((id) => mongoose.isValidObjectId(id));
   const products = await Product.find({ _id: { $in: productIds } });
+  // კატეგორიის snapshot — მხოლოდ ბაზიდან (frontend-ის მონაცემს არ ვენდობით)
+  const categories = await Category.find({ _id: { $in: products.map((p) => p.category).filter(Boolean) } })
+    .select('name translations')
+    .lean();
+  const categorySnapshot = (product) => {
+    const c = categories.find((x) => String(x._id) === String(product.category));
+    return c ? { id: c._id, name: c.name, translations: nameTranslations(c) } : undefined;
+  };
 
   let itemsTotal = 0;
   const orderItems = items.map((item) => {
@@ -137,6 +146,7 @@ const createOrder = asyncHandler(async (req, res) => {
         oldPrice: product.onSale && variant.oldPrice > variant.price ? variant.oldPrice : null,
         quantity: item.quantity,
         variant: { id: variant._id, sku: variant.sku || '', options },
+        category: categorySnapshot(product),
       };
     }
 
@@ -152,6 +162,7 @@ const createOrder = asyncHandler(async (req, res) => {
       price: product.price,
       oldPrice: product.onSale && product.oldPrice > product.price ? product.oldPrice : null,
       quantity: item.quantity,
+      category: categorySnapshot(product),
     };
   });
 

@@ -4,6 +4,7 @@ import Icon from '../../components/Icon';
 import { getInitials } from '../../components/ui';
 
 const links = [
+  { to: '/admin/analytics', label: 'ანალიტიკა', icon: 'chart' },
   { to: '/admin/products', label: 'პროდუქტები', icon: 'box' },
   { to: '/admin/categories', label: 'კატეგორიები', icon: 'tag' },
   { to: '/admin/orders', label: 'შეკვეთები', icon: 'receipt' },

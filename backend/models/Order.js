@@ -12,6 +12,15 @@ const orderItemSchema = new mongoose.Schema(
     // თავდაპირველი ფასი შეკვეთის მომენტში (ფასდაკლების ჩვენებისთვის)
     oldPrice: { type: Number, default: null },
     quantity: { type: Number, required: true, min: 1 },
+    // კატეგორიის snapshot შეკვეთის მომენტში (ანალიტიკისთვის — კატალოგის შემდგომი ცვლილება ისტორიას არ ცვლის).
+    // ივსება მხოლოდ სერვერზე (Product → Category); ძველ შეკვეთებს არ აქვს
+    category: {
+      type: new mongoose.Schema(
+        { id: { type: mongoose.Schema.Types.ObjectId }, name: { type: String }, translations: { type: mongoose.Schema.Types.Mixed, default: undefined } },
+        { _id: false }
+      ),
+      default: undefined,
+    },
     // ვარიანტის snapshot შეკვეთის მომენტში — პროდუქტის შემდგომი ცვლილებები ისტორიულ შეკვეთას არ ცვლის
     variant: {
       type: new mongoose.Schema(
@@ -108,5 +117,7 @@ const orderSchema = new mongoose.Schema(
 
 // „ჩემი შეკვეთები" + შეფასების უფლების შემოწმება (user + completed)
 orderSchema.index({ user: 1, status: 1 });
+// ანალიტიკა და ადმინის თარიღის ფილტრი (createdAt დიაპაზონი)
+orderSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model('Order', orderSchema);

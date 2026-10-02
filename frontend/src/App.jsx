@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { Suspense, lazy, useEffect } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import useDocumentMeta from './hooks/useDocumentMeta';
@@ -25,6 +25,10 @@ import AdminProducts from './pages/admin/AdminProducts';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminUsers from './pages/admin/AdminUsers';
+import { Loader } from './components/ui';
+
+// ანალიტიკა (და მისი გრაფიკების ბიბლიოთეკა) — ცალკე chunk, მხოლოდ ადმინისთვის; მომხმარებლის გვერდებს არ ამძიმებს
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
 
 const NotFound = () => {
   const { t } = useTranslation();
@@ -104,7 +108,15 @@ function App() {
               </AdminRoute>
             }
           >
-            <Route index element={<Navigate to="products" replace />} />
+            <Route index element={<Navigate to="analytics" replace />} />
+            <Route
+              path="analytics"
+              element={
+                <Suspense fallback={<Loader />}>
+                  <AdminAnalytics />
+                </Suspense>
+              }
+            />
             <Route path="products" element={<AdminProducts />} />
             <Route path="categories" element={<AdminCategories />} />
             <Route path="orders" element={<AdminOrders />} />
